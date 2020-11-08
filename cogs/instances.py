@@ -130,8 +130,8 @@ class instances(commands.Cog):
             await msg.edit(embed=embed)
         else:
             if isinstance(msg.channel, discord.TextChannel): await msg.clear_reactions()
-            self.bot.cache.delete_instance(instance_id)
             embed = base_embed(inst.id, title="Instance deleted")
+            self.bot.cache.delete_instance(instance_id)
             await msg.edit(embed=embed)
     @instance_command.command(name="create", aliases=["add"])
     @commands.has_permissions(administrator=True)
