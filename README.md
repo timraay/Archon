@@ -58,9 +58,6 @@ Permissions
 
 ![Player Info](/images/permissions.PNG)
 
-Config & trigger words
-
-
 
 
 # Getting started
