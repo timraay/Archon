@@ -41,10 +41,10 @@ class _events(commands.Cog):
         if not isinstance(error, commands.CommandOnCooldown) and not isinstance(error, commands.CommandNotFound):
             ctx.command.reset_cooldown(ctx)
         
-        if hasattr(ctx.command, 'on_error'):
+        if hasattr(ctx.command, 'on_error') or isinstance(error, commands.CheckFailure):
             return
 
-        if isinstance(error, (commands.CommandInvokeError, commands.CheckFailure)):
+        if isinstance(error, commands.CommandInvokeError):
             error = error.original
 
         if isinstance(error, commands.CommandNotFound):
