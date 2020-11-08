@@ -1,0 +1,5 @@
+# GENERAL
+
+command_prefix=r!
+help_command_emoji=✨
+error_message_emoji=🚫
