@@ -418,6 +418,17 @@ class instances(commands.Cog):
             try: value = type(old_value)(value)
             except: raise commands.BadArgument('%s should be %s, not %s' % (value, type(old_value).__name__, type(value).__name__))
             else:
+
+                if key == "guild_id":
+                    guild = self.bot.get_guild(int(value))
+                    if not guild:
+                        raise commands.BadArgument('Unable to find a guild with ID %s' % value)
+                    member = guild.get_member(ctx.author.id)
+                    if not member:
+                        raise commands.BadArgument('You haven\'t joined that guild yourself')
+                    if not member.guild_permissions.administrator:
+                        raise commands.BadArgument('You need to have administrator permissions in that guild')
+
                 instance.config[key] = value
                 instance.store_config()
 
