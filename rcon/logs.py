@@ -50,7 +50,7 @@ class ServerLogs:
         for message in messages:
             log_id += 1
             cur.execute('INSERT INTO logs VALUES (?,?,?,?,?)', (self.id, log_id, category, message, timestamp))
-            print(f"[{time.strftime('%H:%M')}] [{category.upper()}] {message}")
+            #print(f"[{time.strftime('%H:%M')}] [{category.upper()}] {message}")
         delete_old_logs()
         db.commit()
     
