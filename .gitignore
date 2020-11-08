@@ -4,9 +4,8 @@ token.txt
 # Databases
 *.db
 
-# Bot icons
-icon.png
-icon.xcf
+# Bot icon
+*.xcf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

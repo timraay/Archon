@@ -1,5 +1,7 @@
 # Archon: Connecting your Squad/BTW servers with Discord
 
+<img align="right" width="250" height="250" src="images/icon.png">
+
 Archon is a Discord bot made by timraay aka. Abusify that allows you to view and moderate your Squad or Beyond The Wire server through Discord with simple, yet powerful commands.
 
 ### License
