@@ -13,6 +13,7 @@ config = Config()
 
 
 class moderation(commands.Cog):
+    """Server moderation commands"""
 
     def __init__(self, bot):
         self.bot = bot

@@ -16,6 +16,7 @@ SECONDS_BETWEEN_CHECKS = 15
 
 
 class logs(commands.Cog):
+    """"View or export logs"""
 
     def __init__(self, bot):
         self.bot = bot

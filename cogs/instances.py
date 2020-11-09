@@ -22,6 +22,8 @@ CONFIG_DESC = {
 
 
 class instances(commands.Cog):
+    """Create, select and manage instances"""
+
     def __init__(self, bot):
         self.bot = bot
 

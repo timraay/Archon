@@ -12,6 +12,7 @@ config = Config()
 
 
 class public(commands.Cog):
+    """Server statuses and player information"""
 
     def __init__(self, bot):
         self.bot = bot

@@ -12,6 +12,7 @@ config = Config()
 
 
 class administration(commands.Cog):
+    """Server administration commands"""
 
     def __init__(self, bot):
         self.bot = bot
