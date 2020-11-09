@@ -46,7 +46,7 @@ class instances(commands.Cog):
         embed = discord.Embed(title="Server Instances Help")
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         embed.add_field(name="Public Commands", value="```r!instance <name_or_id>\nr!instance list\nr!instance perms```", inline=False)
-        embed.add_field(name="Admin Commands", value="```r!instance perms help\nr!instance perms <user>\n\nr!instance perms <user> list\nr!instance perms <user> set <perms>\nr!instance perms <user> reset\nr!instance perms guild list\nr!instance perms guild set <perms>\nr!instance config\nr!instance config <key>\nr!instance config <key> <value>```", inline=False)
+        embed.add_field(name="Admin Commands", value="```r!instance perms help\nr!instance perms <user>\n\nr!instance perms <user> list\nr!instance perms <user> set <perms>\nr!instance perms <user> reset\nr!instance perms guild list\nr!instance perms guild set <perms>\nr!instance config\nr!instance config <key>\nr!instance config <key> <value>\n\nr!instance add\nr!instance reconnect\nr!instance disconnect\nr!instance delete```", inline=False)
         await ctx.send(embed=embed)
 
     @instance_command.command(name="list", description="List all available instances", usage="r!instance list", aliases=["view", "show"])
