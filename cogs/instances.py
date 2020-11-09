@@ -89,7 +89,7 @@ class instances(commands.Cog):
         await ctx.send(embed=embed)
 
     @instance_command.command(name="connect", aliases=["reconnect"])
-    @check_perms(administration=True)
+    @check_perms(instance=True)
     async def connect_instance(self, ctx):
         instance_id = self.bot.cache._get_selected_instance(ctx.author.id)
         inst = Instance(instance_id)
