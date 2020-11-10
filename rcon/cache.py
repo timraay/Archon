@@ -58,7 +58,7 @@ class Cache():
             raise BadArgument("user needs to be either int or discord.User")
         return user
 
-    def _get_selected_instance(self, user):
+    def _get_selected_instance(self, user, guild_id=None):
         user = self._get_user_id(user)
 
         if user not in self.selected_instance:
@@ -67,7 +67,7 @@ class Cache():
         try:
             instances.Instance(self.selected_instance[user])
         except:
-            try: self.selected_instance[user] = instances.get_available_instances(user)[0][0].id
+            try: self.selected_instance[user] = instances.get_available_instances(user, guild_id)[0][0].id
             except: self.selected_instance[user] = -1
 
         return self.selected_instance[user]
@@ -78,11 +78,14 @@ class Cache():
         return perms
 
     def instance(self, user, by_inst_id=False):
+        guild_id = None
         if by_inst_id:
-            instance_id = user               
+            instance_id = user
         else:
+            if isinstance(user, discord.Member):
+                guild_id = user.guild.id
             user = self._get_user_id(user)
-            instance_id = self._get_selected_instance(user)
+            instance_id = self._get_selected_instance(user, guild_id)
 
         if instance_id in self.instances:
             inst = self.instances[instance_id]

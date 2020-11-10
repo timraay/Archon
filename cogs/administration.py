@@ -20,7 +20,7 @@ class administration(commands.Cog):
     @commands.command(description="Request a command through RCON", usage="r!execute <cmd>", aliases=["exec"], hidden=False)
     @check_perms(administration=True)
     async def execute(self, ctx, *, cmd):
-        res = self.bot.cache.instance(ctx.author.id).rcon.exec_command(cmd)
+        res = self.bot.cache.instance(ctx.author).rcon.exec_command(cmd)
         res = literal_eval(res)
         if not res: # An empty list was received
             res = "Empty response received"
@@ -39,7 +39,7 @@ class administration(commands.Cog):
     @commands.command(description="Set the max player limit", usage="r!set_max_player_limit", aliases=["set_player_limit", "player_limit"])
     @check_perms(administration=True)
     async def set_max_player_limit(self, ctx, limit: int):
-        res = self.bot.cache.instance(ctx.author.id).rcon.set_max_player_limit(limit)
+        res = self.bot.cache.instance(ctx.author).rcon.set_max_player_limit(limit)
 
         embed = discord.Embed(title="Max player limit changed", description=res)
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
@@ -48,7 +48,7 @@ class administration(commands.Cog):
     @commands.command(description="Set or remove a server password", usage="r!password [password]", aliases=["set_password"])
     @check_perms(administration=True)
     async def password(self, ctx, password: str = ""):
-        res = self.bot.cache.instance(ctx.author.id).rcon.set_password(password)
+        res = self.bot.cache.instance(ctx.author).rcon.set_password(password)
 
         embed = discord.Embed(title="Password updated", description=res)
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)

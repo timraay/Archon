@@ -34,7 +34,7 @@ class public(commands.Cog):
                 raise commands.BadArgument("Missing required permissions for this instance")
             inst = self.bot.cache.instance(inst.id, by_inst_id=True).update()
         else:
-            inst = self.bot.cache.instance(ctx.author.id).update()
+            inst = self.bot.cache.instance(ctx.author).update()
         
         embed = self.create_server_embed(inst)
         await ctx.send(embed=embed)
@@ -70,7 +70,7 @@ class public(commands.Cog):
         if team_id not in [1, 2]:
             raise commands.BadArgument('team_id needs to be either 1 or 2')
         
-        inst = self.bot.cache.instance(ctx.author.id).update()
+        inst = self.bot.cache.instance(ctx.author).update()
 
         def build_embed(team_id):
             if team_id == 1: team = inst.team1
@@ -136,7 +136,7 @@ class public(commands.Cog):
         if team_id not in [1, 2]:
             raise commands.BadArgument('team_id needs to be either 1 or 2')
         
-        inst = self.bot.cache.instance(ctx.author.id).update()
+        inst = self.bot.cache.instance(ctx.author).update()
         if team_id == 1: team = inst.team1
         elif team_id == 2: team = inst.team2
         squad = None
@@ -164,7 +164,7 @@ class public(commands.Cog):
     @commands.command(description="Receive playerdata", usage="r!player <name or id>", aliases=["playerdata", "list_player", "listplayer"])
     @check_perms(public=True)
     async def player(self, ctx, *, name_or_id):
-        player = self.bot.cache.instance(ctx.author.id).get_player(name_or_id, related_names=True)
+        player = self.bot.cache.instance(ctx.author).get_player(name_or_id, related_names=True)
         if not player:
             raise commands.BadArgument("Couldn't find a player with this name or ID currently online")
         
@@ -181,7 +181,7 @@ class public(commands.Cog):
     @commands.command(description="View the current and upcoming map", usage="r!map", aliases=["map_rotation", "maprotation", "rotation"])
     @check_perms(public=True)
     async def map(self, ctx):
-        inst = self.bot.cache.instance(ctx.author.id)
+        inst = self.bot.cache.instance(ctx.author)
         current_map = inst.current_map
         next_map = inst.next_map
         try:
