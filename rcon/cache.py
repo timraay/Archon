@@ -304,7 +304,7 @@ class ServerInstance():
                 elif team_id == 2: self.team2 = Team(team_id, team_faction)
                 
             elif line.startswith("ID"):
-                re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d) \| Locked: (True|False)', line).groups()
+                re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False)', line).groups()
                 squad_id = int(re_res[0])
                 name = str(re_res[1])
                 size = int(re_res[2])
