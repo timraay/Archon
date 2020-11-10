@@ -33,7 +33,7 @@ class moderation(commands.Cog):
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} warned {player.name} for "{reason}"')
     
-    @commands.command(description="Kill a player and remove them from their squad", usage="r!punish <player>", aliases=["punish_player", "kill", "kill_player"])
+    @commands.command(description="Kill a player and remove them from their squad", usage="r!punish <player> [reason]", aliases=["punish_player", "kill", "kill_player"])
     @check_perms(moderation=True)
     async def punish(self, ctx, name_or_id: str, *, reason: str = None):
         inst = self.bot.cache.instance(ctx.author.id).update()
