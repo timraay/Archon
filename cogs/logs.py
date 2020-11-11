@@ -23,7 +23,7 @@ class logs(commands.Cog):
         self.check_server.start()
 
 
-    @commands.command(description="Read all chat messages", usage="r!chat", hidden=True)
+    @commands.command(description="Read all chat messages", usage="r!chat")
     @check_perms(logs=True)
     async def chat(self, ctx):
         
@@ -48,7 +48,7 @@ class logs(commands.Cog):
         output = "```json\n" + output + "```"
         await ctx.send(output)
     
-    @commands.command(description="Read all chat messages", usage="r!chat", hidden=True)
+    @commands.command(description="Read all chat messages", usage="r!logs ([category]|export)")
     @check_perms(logs=True)
     async def logs(self, ctx, category: str = None):
         
