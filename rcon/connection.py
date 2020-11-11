@@ -88,14 +88,6 @@ class RconConnection(object):
         self.port = port # Raises a ConnectionRefusedError when invalid
         self.password = password # Returns empty headers when invalid
         self.single_packet_mode = single_packet_mode
-        self._connect_sock()
-        #print("created connection")
-        self.pkt_id = itertools.count(1)
-        #print("trying to authenticate with password", password)
-        self._authenticate(password)
-        self.all_player_chat = list()
-
-    def _connect_sock(self):
         try:
             self._sock = socket.create_connection(address=(server, port), timeout=10)
         except socket.timeout:
@@ -104,6 +96,11 @@ class RconConnection(object):
             raise RconAuthError("Invalid port")
         except OSError:
             raise RconAuthError("Invalid host")
+        #print("created connection")
+        self.pkt_id = itertools.count(1)
+        #print("trying to authenticate with password", password)
+        self._authenticate(password)
+        self.all_player_chat = list()
 
     def _authenticate(self, password):
         """Authenticate with the server using the given password."""
@@ -158,10 +155,7 @@ class RconConnection(object):
             self._sock.sendall(data)
         except OSError: # The connection was most likely aborted
             print("WARNING: OSError raised, creating new socket connection...")
-            try: self._connect_sock()
-            except RconAuthError as e:
-                self = None
-                raise e
+            self._sock = socket.create_connection((self.server, self.port))
             self._authenticate(self.password)
             self._sock.sendall(data) # Try sending again
 
