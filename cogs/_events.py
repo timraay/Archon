@@ -112,7 +112,7 @@ class _events(commands.Cog):
             {"type": "playing", "message": "Squad"},
             {"type": "playing", "message": "Beyond The Wire"}
         ]
-        playercount = str(sum([len(inst.players) for inst in self.bot.cache.instances.values()]))
+        playercount = str(sum([len(inst.players) for inst in self.bot.cache.instances.values() if inst]))
         servercount = str(len(self.bot.cache.instances))
         status = random.choice(statuses)
         message = status["message"].format(playercount=playercount, servercount=servercount)
