@@ -89,6 +89,7 @@ class Cache():
 
         if instance_id in self.instances:
             inst = self.instances[instance_id]
+            if not inst.rcon._sock: inst = None
             if inst == None:
                 raise CacheNotFound("No cached data found for instance ID %s" % instance_id)
             return inst
