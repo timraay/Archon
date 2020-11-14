@@ -16,7 +16,7 @@ SECONDS_BETWEEN_CHECKS = 15
 
 
 class logs(commands.Cog):
-    """"View or export logs"""
+    """View or export logs"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -83,10 +83,7 @@ class logs(commands.Cog):
         # We can use this opportunity to update the cache,
         # though we don't want to overdo this.
         if (datetime.now() - inst.last_updated).total_seconds() > SECONDS_BETWEEN_CACHE_REFRESH:
-            try:
-                inst.update()
-            except:
-                inst.rcon.exec_command("a")
+            inst.update()
         else:
             inst.rcon.exec_command("a")
 

@@ -163,11 +163,11 @@ class ServerInstance():
             if not self.is_transitioning:
                 self._parse_players()
                 self._parse_squads()
+            self.last_updated = datetime.now()
         except RconAuthError as e:
             self = None
             raise ConnectionLost("Lost connection to RCON: " + str(e))
         
-        self.last_updated = datetime.now()
         return self
 
     def _parse_players(self):

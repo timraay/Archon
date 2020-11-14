@@ -166,14 +166,14 @@ class RconConnection(object):
         """Read one RCON packet"""
         # The header is made of three little-endian integers (8 bytes each).
         HEADER_SIZE = struct.calcsize('<3i')
-        while True:
+        for i in range(5):
             # Skip empty packets and try again.
             header = self._sock.recv(HEADER_SIZE)
             #print("\nheader:", header)
-            if len(header) != 0:
+            if len(header) != 0 or skip_empty_headers:
                 break
-            elif not skip_empty_headers:
-                raise RconError('Received empty packet header')
+        if len(header) == 0:
+            raise RconError('Received empty packet header')
 
         # We got a weird packet here! If it's the special multipacket header, there is nothing left to read for
         # this packet. Otherwise, it's a malformed packet header.
@@ -206,7 +206,6 @@ class RconConnection(object):
         # message has the wrong packet type). This was observed on Squad version b-17.0.13.23847.
         # e.g. packet body: b'\x00\x00\x00\x01\x00\x00\x00[ChatAll] this is example chat\x00\x00'.
         if SPECIAL_MULTIPACKET_BYTES in body:
-            #print('Found multipacket response inside a chat message! Using chat and discarding the rest!')
             #print('Found multipacket response inside a chat message! Using chat and discarding the rest!')
             self.add_chat_message(body.strip(b'\x00\x01').decode('utf-8'))
             return RconPacket(-1, END_OF_MULTIPACKET, '')
@@ -291,9 +290,10 @@ class RconConnection(object):
                           ''.join(str(body_parts)))
 
     def flush_socket(self):
-        res = self._sock.recv(4096)
-        while res != b'':
+        for i in range(5):
             res = self._sock.recv(4096)
+            if res == b'':
+                break
 
     def get_player_chat(self):
         """ Returns the stored player chat objects. """
