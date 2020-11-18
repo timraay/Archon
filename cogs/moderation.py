@@ -29,7 +29,6 @@ class moderation(commands.Cog):
         res = inst.rcon.warn(player.steam_id, reason)
 
         embed = base_embed(inst.id, title="Player warned", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} warned {player.name} for "{reason}"')
     
@@ -47,7 +46,6 @@ class moderation(commands.Cog):
         res = inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Player killed and removed from squad", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} punished {player.name} for "{reason}"')
 
@@ -62,7 +60,6 @@ class moderation(commands.Cog):
         self.bot.cache.instance(ctx.author).disconnect_player(player)
 
         embed = base_embed(inst.id, title="Player kicked", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} kicked {player.name} for "{reason}"')
 
@@ -79,7 +76,6 @@ class moderation(commands.Cog):
         self.bot.cache.instance(ctx.author).disconnect_player(player)
 
         embed = base_embed(inst.id, title="Player banned", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} banned {player.name} for {duration} for "{reason}"')
 
@@ -90,7 +86,6 @@ class moderation(commands.Cog):
         res = inst.rcon.broadcast(message)
 
         embed = base_embed(self.bot.cache.instance(ctx.author).id, title="Message broadcasted", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} broadcasted "{message}"')
 
@@ -111,7 +106,6 @@ class moderation(commands.Cog):
         inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Commander demoted", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} demoted commander {player.name} for "{reason}"')
     
@@ -130,7 +124,6 @@ class moderation(commands.Cog):
         inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Player removed from squad", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} squad-kicked {player.name} for "{reason}"')
 
@@ -147,7 +140,6 @@ class moderation(commands.Cog):
         inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Player switched", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} team-switched {player.name} for "{reason}"')
 
@@ -176,7 +168,6 @@ class moderation(commands.Cog):
             inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Squad disbanded", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} disbanded {team.faction_short}/Squad{squad_id} for "{reason}"')
 
@@ -191,7 +182,6 @@ class moderation(commands.Cog):
             res = inst.rcon.end_match()
 
         embed = base_embed(self.bot.cache.instance(ctx.author).id, title="Skipped the current match", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} skipped the current match')
     
@@ -202,7 +192,6 @@ class moderation(commands.Cog):
         res = inst.rcon.restart_match()
 
         embed = base_embed(self.bot.cache.instance(ctx.author).id, title="Restarted the current match", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} restarted the current match')
 
@@ -213,7 +202,6 @@ class moderation(commands.Cog):
         res = inst.rcon.set_next_map(map_name)
 
         embed = base_embed(self.bot.cache.instance(ctx.author).id, title="Queued the next map", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} queued {map_name}')
 

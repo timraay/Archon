@@ -6,7 +6,7 @@ from ast import literal_eval
 from rcon.commands import Rcon
 from rcon.instances import check_perms
 
-from utils import Config
+from utils import Config, base_embed
 config = Config()
 
 
@@ -30,7 +30,6 @@ class administration(commands.Cog):
                 res = res[:1015] + "..."
 
         embed = discord.Embed(title="Command executed")
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         embed.add_field(name="Request", value=f"`{cmd}`", inline=False)
         embed.add_field(name="Response", value=f"```{res}```")
         await ctx.send(embed=embed)
@@ -39,10 +38,10 @@ class administration(commands.Cog):
     @commands.command(description="Set the max player limit", usage="r!set_max_player_limit", aliases=["set_player_limit", "player_limit"])
     @check_perms(administration=True)
     async def set_max_player_limit(self, ctx, limit: int):
-        res = self.bot.cache.instance(ctx.author).rcon.set_max_player_limit(limit)
+        inst = self.bot.cache.instance(ctx.author)
+        res = inst.rcon.set_max_player_limit(limit)
 
-        embed = discord.Embed(title="Max player limit changed", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        embed = base_embed(inst.id, title="Max player limit changed", description=res)
         await ctx.send(embed=embed)
     
     @commands.command(description="Set or remove a server password", usage="r!password [password]", aliases=["set_password"])
@@ -51,7 +50,6 @@ class administration(commands.Cog):
         res = self.bot.cache.instance(ctx.author).rcon.set_password(password)
 
         embed = discord.Embed(title="Password updated", description=res)
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
 
 def setup(bot):
