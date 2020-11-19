@@ -56,7 +56,7 @@ class _events(commands.Cog):
             close_matches = difflib.get_close_matches(used_command, all_commands, cutoff=0.3)
             desc = f"{error_emoji} Unknown command!"
             if close_matches:
-                desc += f"\n`Maybe try one of the following: {self.bot.command_prefix}{f', {self.bot.command_prefix}'.join(close_matches)}`"
+                desc += f"\n`Maybe try one of the following: {ctx.prefix}{f', {ctx.prefix}'.join(close_matches)}`"
             await ctx.send(desc)
             
         elif isinstance(error, commands.CommandOnCooldown):

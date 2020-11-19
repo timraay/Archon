@@ -14,7 +14,7 @@ config = Config()
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(intents=intents, command_prefix=config.get("command_prefix"), case_insensitive=True)
+bot = commands.Bot(intents=intents, command_prefix=("r!", "R!"), case_insensitive=True)
 bot.remove_command('help')
 
 from rcon.cache import Cache
@@ -24,7 +24,7 @@ bot.cache = Cache()
 @bot.group(invoke_without_command=True, aliases=['cog'])
 @commands.is_owner()
 async def module(ctx):
-    await ctx.send(f"**Available Operations**\n{bot.command_prefix}cog reload [cog]\n{bot.command_prefix}cog enable <cog>\n{bot.command_prefix}cog disable <cog>\n{bot.command_prefix}cog info <cog>")
+    await ctx.send(f"**Available Operations**\n{ctx.prefix}cog reload [cog]\n{ctx.prefix}cog enable <cog>\n{ctx.prefix}cog disable <cog>\n{ctx.prefix}cog info <cog>")
 
 @module.command(aliases=["load"])
 @commands.is_owner()

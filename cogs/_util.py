@@ -37,7 +37,7 @@ class _util(commands.Cog):
 
         output = ""
         data = {} # This will hold all cogs and their commands
-        prefix = self.bot.command_prefix
+        prefix = ctx.prefix
 
         """ Create a dict with all cogs and their commands """
         for cog in self.bot.cogs:
