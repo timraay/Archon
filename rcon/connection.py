@@ -134,9 +134,16 @@ class RconConnection(object):
 
         Returns the response body
         """
-        #print(f'Executing "{command}"')
+        #print(f'\n============================\n\nExecuting "{command}"')
         cmd_pkt = RconPacket(next(self.pkt_id), SERVERDATA_EXECCOMMAND, command)
         try:
+            self._send_pkt(cmd_pkt)
+            resp = self.read_response(cmd_pkt, multi=True)
+        except (OSError, RconEmptyHeaderError):
+            print("WARNING: OSError or RconEmptyHeaderError raised, creating new socket connection...")
+            self._connect_sock()
+            self._authenticate(self.password)
+            # Try again
             self._send_pkt(cmd_pkt)
             resp = self.read_response(cmd_pkt, multi=True)
         except Exception as e:
@@ -154,13 +161,7 @@ class RconConnection(object):
         if pkt.size() > 4096:
             raise RconSizeError('pkt_size > 4096 bytes')
         data = pkt.pack()
-        try:
-            self._sock.sendall(data)
-        except OSError: # The connection was most likely aborted
-            print("WARNING: OSError raised, creating new socket connection...")
-            self._connect_sock()
-            self._authenticate(self.password)
-            self._sock.sendall(data) # Try sending again
+        self._sock.sendall(data)
 
     def _recv_pkt(self, skip_empty_headers=True):
         """Read one RCON packet"""
@@ -173,7 +174,7 @@ class RconConnection(object):
             if len(header) != 0 or skip_empty_headers:
                 break
         if len(header) == 0:
-            raise RconError('Received empty packet header')
+            raise RconEmptyHeaderError('Received empty packet header')
 
         # We got a weird packet here! If it's the special multipacket header, there is nothing left to read for
         # this packet. Otherwise, it's a malformed packet header.
@@ -314,6 +315,9 @@ class RconError(Exception):
     pass
 class RconAuthError(RconError):
     """Raised if an RCON Authentication error occurs."""
+    pass
+class RconEmptyHeaderError(RconError):
+    """Raised when a RCON packet header is empty"""
     pass
 class RconSizeError(RconError):
     """Raised when an RCON packet is an illegal size."""

@@ -96,10 +96,10 @@ def add_instance(name: str, address: str, port: int, password: str, owner_id: in
 
     return Instance(instance_id)
 
-def get_perms(user: discord.User, guild_id: int, instance_id: int, is_dict=True):
+def get_perms(user_id: int, guild_id: int, instance_id: int, is_dict=True):
     perms_int = 0
     
-    for instance, perms in get_available_instances(user.id, guild_id):
+    for instance, perms in get_available_instances(user_id, guild_id):
         if instance.id == instance_id:
             perms_int = perms
 
@@ -199,7 +199,7 @@ def has_perms(ctx, public=None, logs=None, moderation=None, administration=None,
 # Wrappers
 def check_perms(public=None, logs=None, moderation=None, administration=None, instance=None):
     async def predicate(ctx):
-        perms = ctx.bot.cache.perms(ctx.author, ctx.guild.id)
+        perms = ctx.bot.cache.perms(ctx.author.id, ctx.guild.id)
         is_ok = True
         if public != None and public != perms["public"]: is_ok = False
         if logs != None and logs != perms["logs"]: is_ok = False
@@ -216,14 +216,14 @@ def check_perms(public=None, logs=None, moderation=None, administration=None, in
     return commands.check(predicate)
 def is_game(game: str):
     async def predicate(ctx):
-        instance = Instance(ctx.bot.cache._get_selected_instance(ctx.author.id))
+        instance = Instance(ctx.bot.cache._get_selected_instance(ctx.author.id, ctx.guild.id))
         if instance.game != game:
             await ctx.send(f":no_entry_sign: Invalid instance!\n`This command only works for %s servers`" % game.upper())
         return instance.game == game
     return commands.check(predicate)
 def is_owner():
     async def predicate(ctx):
-        cur.execute('SELECT instance_id FROM instances WHERE instance_id = ? AND owner_id = ?', (ctx.bot.cache._get_selected_instance(ctx.author), ctx.author.id))
+        cur.execute('SELECT instance_id FROM instances WHERE instance_id = ? AND owner_id = ?', (ctx.bot.cache._get_selected_instance(ctx.author.id, ctx.guild.id), ctx.author.id))
         if cur.fetchone():
             return True
         else:
