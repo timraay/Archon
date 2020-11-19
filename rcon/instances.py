@@ -96,10 +96,10 @@ def add_instance(name: str, address: str, port: int, password: str, owner_id: in
 
     return Instance(instance_id)
 
-def get_perms(user_id: int, guild_id: int, instance_id: int, is_dict=True):
+def get_perms(user: discord.User, guild_id: int, instance_id: int, is_dict=True):
     perms_int = 0
     
-    for instance, perms in get_available_instances(user_id, guild_id):
+    for instance, perms in get_available_instances(user.id, guild_id):
         if instance.id == instance_id:
             perms_int = perms
 
@@ -199,7 +199,7 @@ def has_perms(ctx, public=None, logs=None, moderation=None, administration=None,
 # Wrappers
 def check_perms(public=None, logs=None, moderation=None, administration=None, instance=None):
     async def predicate(ctx):
-        perms = ctx.bot.cache.perms(ctx.author.id, ctx.guild.id)
+        perms = ctx.bot.cache.perms(ctx.author, ctx.guild.id)
         is_ok = True
         if public != None and public != perms["public"]: is_ok = False
         if logs != None and logs != perms["logs"]: is_ok = False

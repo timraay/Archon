@@ -73,7 +73,7 @@ class Cache():
         return self.selected_instance[user]
 
     def perms(self, user, guild_id):
-        selected_instance = self._get_selected_instance(user)
+        selected_instance = self._get_selected_instance(user, guild_id)
         perms = instances.get_perms(user, guild_id, selected_instance)
         return perms
 
