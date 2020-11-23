@@ -6,6 +6,7 @@ import re
 from rcon.commands import Rcon
 from rcon.instances import check_perms, Instance
 from rcon.logs import ServerLogs, format_log
+from rcon.connection import RconError
 
 from utils import Config, base_embed
 config = Config()
@@ -20,6 +21,8 @@ class logs(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        
+        self.check_server.add_exception_type(OSError, RconError)
         self.check_server.start()
 
 
