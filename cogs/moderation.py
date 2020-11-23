@@ -81,7 +81,7 @@ class moderation(commands.Cog):
 
     @commands.command(description="Broadcast a message", usage="r!broadcast <message>", aliases=["bc"])
     @check_perms(moderation=True)
-    async def broadcast(self, ctx, message: str):
+    async def broadcast(self, ctx, *, message: str):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
         res = inst.rcon.broadcast(message)
 
