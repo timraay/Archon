@@ -4,9 +4,9 @@ import json
 from ast import literal_eval
 from datetime import datetime
 
-from rcon.instances import check_perms, get_available_instances, perms_to_dict
+from rcon.instances import check_perms, get_available_instances, perms_to_dict, has_perms
 
-from utils import Config, get_player_input_type, add_empty_fields, base_embed
+from utils import Config, get_player_input_type, add_empty_fields, base_embed, get_name
 config = Config()
 
 
@@ -168,15 +168,84 @@ class public(commands.Cog):
         if not player:
             raise commands.BadArgument("Couldn't find a player with this name or ID currently online")
         
-        embed = base_embed(self.bot.cache._get_selected_instance(ctx.author.id), title=player.name)
+        inst_id = self.bot.cache._get_selected_instance(ctx.author.id, ctx.channel.id)
+        embed = base_embed(inst_id, title=player.name, description=f"[View player on Steam](https://steamcommunity.com/profiles/{str(player.steam_id)})")
         embed.add_field(name="Steam ID", value=f"`{player.steam_id}`")
         embed.add_field(name="Online For", value=f"{str(player.online_time())} minutes")
         embed.add_field(name="First Logged In", value="Coming Soon")
         embed.add_field(name="Player ID", value=str(player.player_id))
         embed.add_field(name="Team ID", value=str(player.team_id))
         embed.add_field(name="Squad ID", value=str(player.squad_id))
-        await ctx.send(embed=embed)
-        
+        msg = await ctx.send(embed=embed)
+
+        if has_perms(ctx, moderation=True):
+            emojis = ["<:message:781233615651864576>", "<:switch:781235282862800936>", "<:punish:781235282984304640>", "<:kick:781233615610183750>", "<:ban:781233615656190014>"]
+            for emoji in emojis:
+                await msg.add_reaction(emoji)
+
+            def check_reaction(reaction, user):
+                return str(reaction.emoji) in emojis and user == ctx.author and reaction.message == msg
+            try: reaction, user = await self.bot.wait_for('reaction_add', timeout=60, check=check_reaction)
+            except: await msg.clear_reactions()
+            else:
+                await msg.delete()
+                def check_message(m):
+                    return m.author == ctx.author and m.channel == ctx.channel
+
+                action = reaction.emoji.name
+                if action == "message":
+                    embed = base_embed(inst_id, title=f"Messaging player {player.name}...", description=f"{get_name(ctx.author)}, what should the message be? To cancel, type \"cancel\".")
+                elif action == "switch":
+                    embed = base_embed(inst_id, title=f"Switching teams of player {player.name}...", description=f"{get_name(ctx.author)}, what should the reason be? For no reason, type \"none\". To cancel, type \"cancel\".")
+                elif action == "punish":
+                    embed = base_embed(inst_id, title=f"Killing player {player.name}...", description=f"{get_name(ctx.author)}, what should the reason be? For no reason, type \"none\". To cancel, type \"cancel\".")
+                elif action == "kick":
+                    embed = base_embed(inst_id, title=f"Kicking player {player.name}...", description=f"{get_name(ctx.author)}, what should the reason be? For no reason, type \"none\". To cancel, type \"cancel\".")
+                elif action == "ban":
+                    embed = base_embed(inst_id, title=f"Banning player {player.name}...", description=f"{get_name(ctx.author)}, what should the reason be? For no reason, type \"none\". To cancel, type \"cancel\".")
+
+                msg = await ctx.send(embed=embed)
+
+                try:
+                    m = await self.bot.wait_for('message', timeout=120, check=check_message)
+                except:
+                    await msg.clear_reactions()
+                    await msg.edit(embed=base_embed(inst_id, description=f"{get_name(ctx.author)}, you took too long to respond."))
+                else:
+                    
+                    if m.content.lower() == "cancel":
+                        embed.description = "You cancelled the action."
+                        await msg.edit(embed=embed)
+                        return
+                    
+                    if m.content.lower() == "none" and action != "message": reason = ""
+                    else: reason = m.content
+
+                    cog = self.bot.get_cog('moderation')
+                    if action == "message": await cog.warn.__call__(ctx, player.steam_id, reason=reason)
+                    elif action == "switch": await cog.switch_team.__call__(ctx, player.steam_id, reason=reason)
+                    elif action == "punish": await cog.punish.__call__(ctx, player.steam_id, reason=reason)
+                    elif action == "kick": await cog.kick.__call__(ctx, player.steam_id, reason=reason)
+                    elif action == "ban":
+                        embed = base_embed(inst_id, title=f"Banning player {player.name}...", description="How long should the ban last? For a permanent ban, type \"0\". To cancel, type \"cancel\".")
+                        msg = await ctx.send(embed=embed)
+
+                        try: m = await self.bot.wait_for('message', timeout=120, check=check_message)
+                        except:
+                            await msg.clear_reactions()
+                            await msg.edit(embed=base_embed(inst_id, description=f"{get_name(ctx.author)}, you took too long to respond."))
+                        else:
+                            if m.content.lower() == "cancel":
+                                embed.description = "You cancelled the action."
+                                await msg.edit(embed=embed)
+                                return
+
+                            if m.content.lower() == "perm": duration = "0"
+                            else: duration = m.content.lower()
+
+                            await cog.ban.__call__(ctx, player.steam_id, duration, reason=reason)
+
+                        
 
     @commands.command(description="View the current and upcoming map", usage="r!map", aliases=["map_rotation", "maprotation", "rotation"])
     @check_perms(public=True)

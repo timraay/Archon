@@ -51,11 +51,12 @@ class moderation(commands.Cog):
 
     @commands.command(description="Kick a player", usage="r!kick <player> [reason]", aliases=["kick_player"])
     @check_perms(moderation=True)
-    async def kick(self, ctx, name_or_id: str, *, reason: str = "Kicked by a moderator"):
+    async def kick(self, ctx, name_or_id: str, *, reason: str = None):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
+        if not reason: reason = "Kicked by a moderator"
         res = inst.rcon.kick(player.steam_id, reason)
         self.bot.cache.instance(ctx.author.id, ctx.guild.id).disconnect_player(player)
 
@@ -65,13 +66,14 @@ class moderation(commands.Cog):
 
     @commands.command(description="Ban a player", usage="r!ban <player> [duration] [reason]", aliases=["ban_player"])
     @check_perms(moderation=True)
-    async def ban(self, ctx, name_or_id: str, duration: str = "0", *, reason: str = "Banned by a moderator"):
+    async def ban(self, ctx, name_or_id: str, duration: str = "0", *, reason: str = None):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
         if "perm" in duration:
             duration = "0"
+        if not reason: reason = "Banned by a moderator"
         res = inst.rcon.ban(player.steam_id, duration, reason)
         self.bot.cache.instance(ctx.author.id, ctx.guild.id).disconnect_player(player)
 
