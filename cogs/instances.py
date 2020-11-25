@@ -27,10 +27,13 @@ class instances(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+
+    ### r!instance
+    ### r!instance <instance>
     @commands.group(invoke_without_command=True, name="instance", description="Create, select and manage instances", usage="r!inst help", aliases=["inst"])
     async def instance_command(self, ctx, *, instance_id=None):
         if instance_id:
-            await self.select_instance.__call__(ctx, instance_id)
+            await self.select_instance.__call__(ctx, instance_id=instance_id)
         
         else:
             current_instance = self.bot.cache._get_selected_instance(ctx.author.id)
@@ -40,7 +43,8 @@ class instances(commands.Cog):
                 embed.set_author(name="No instance selected")
             embed.set_footer(text='Use "r!inst help" to view a list of options')
             await ctx.send(embed=embed)
-        
+    
+    ### r!instance help
     @instance_command.command(name="help")
     async def instance_help(self, ctx):
         embed = discord.Embed(title="Server Instances Help")
@@ -49,6 +53,7 @@ class instances(commands.Cog):
         embed.add_field(name="Admin Commands", value="```r!instance perms help\nr!instance perms <user>\n\nr!instance perms <user> list\nr!instance perms <user> set <perms>\nr!instance perms <user> reset\nr!instance perms guild list\nr!instance perms guild set <perms>\nr!instance config\nr!instance config <key>\nr!instance config <key> <value>\n\nr!instance add\nr!instance reconnect\nr!instance disconnect\nr!instance delete```", inline=False)
         await ctx.send(embed=embed)
 
+    ### r!instance list
     @instance_command.command(name="list", description="List all available instances", usage="r!instance list", aliases=["view", "show"])
     async def list_instances(self, ctx):
         instances = get_available_instances(ctx.author.id, ctx.guild.id)
@@ -70,8 +75,9 @@ class instances(commands.Cog):
         embed = add_empty_fields(embed)
 
         await ctx.send(embed=embed)
+    ### r!instance select <instance>
     @instance_command.command(name="select", description="Select an instance to control", usage="r!instance <instance>")
-    async def select_instance(self, ctx, instance_id: str):
+    async def select_instance(self, ctx, *, instance_id: str):
         instances = get_available_instances(ctx.author.id, ctx.guild.id)
         inst = None
         for i, (instance, perms) in enumerate(instances):
@@ -88,6 +94,7 @@ class instances(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    ### r!instance connect
     @instance_command.command(name="connect", aliases=["reconnect"])
     @check_perms(instance=True)
     async def connect_instance(self, ctx):
@@ -100,6 +107,7 @@ class instances(commands.Cog):
         else: # Instance was successfully connected
             embed = base_embed(instance_id, title="Instance was successfully (re)connected")
             await ctx.send(embed=embed)
+    ### r!instance disconnect
     @instance_command.command(name="disconnect", aliases=["shutdown"])
     async def disconnect_instance(self, ctx):
         instance_id = self.bot.cache._get_selected_instance(ctx.author.id)
@@ -109,6 +117,7 @@ class instances(commands.Cog):
         embed = base_embed(instance_id, title="Instance was shut down")
         await ctx.send(embed=embed)
     
+    ### r!instance delete
     @instance_command.command(name="delete")
     @is_owner()
     async def delete_instance(self, ctx):
@@ -135,6 +144,7 @@ class instances(commands.Cog):
             embed = base_embed(inst.id, title="Instance deleted")
             self.bot.cache.delete_instance(instance_id)
             await msg.edit(embed=embed)
+    ### r!instance create
     @instance_command.command(name="create", aliases=["add"])
     @commands.has_permissions(administrator=True)
     async def create_instance(self, ctx):
@@ -267,6 +277,9 @@ class instances(commands.Cog):
 
         
 
+    ### r!instance perms [member]
+    ### r!instance perms <member> list
+    ### r!instance perms <member> <operation> <value>
     @instance_command.group(invoke_without_command=True, name="permissions", description="Set or view RCON permissions for a user or guild", aliases=["perms"])
     async def permissions_group(self, ctx, user: discord.Member = None, operation: str = "", value: int = None):
         instance_id = self.bot.cache._get_selected_instance(ctx.author.id)
@@ -337,7 +350,9 @@ class instances(commands.Cog):
         # Unknown operation
         else:
             raise commands.BadArgument('Operation needs to be either "list" or "set" or "reset", not "%s"' % operation)
-
+    
+    ### r!instance perms guild ["list"]
+    ### r!instance perms guild set <value>
     @permissions_group.command(name="guild", description="Set or view RCON permissions for a guild")
     @check_perms(instance=True)
     async def guild_permissions(self, ctx, operation: str = '', value: int = None):
@@ -385,7 +400,7 @@ class instances(commands.Cog):
         else:
             raise commands.BadArgument('Operation needs to be either "list" or "set", not "%s"' % operation)
 
-    
+    ### r!instance perms help
     @permissions_group.command(name="help")
     async def permissions_help(self, ctx):
         embed = discord.Embed(title="Permission Values", description="Each of my commands require permission. Instance Managers can change who can use what command by setting permission values for users or even entire guilds (Discord servers).\n\nCurrently, there are 5 different types of permissions. Each of them represent a number, which is the square of the previous one. A list of all permissions can be seen here:```1 - Public commands\n2 - Game logs\n4 - Moderation commands\n8 - Administration commands\n16 - Instance management```\nIf you sum all of the values of the permissions you want together, you'll get the permissions value. For instance, permissions for public commands tied with moderation commands would give a permissions value of 1 + 4 = 5.\n\n**User-Specific Permissions**\nUser permissions grant a single user permission to use the commands belonging to that value. They can use these in every Discord guild this bot is in, as long as they have Administrator permissions in that guild. Every action is still logged.\n\n**Guild-Specific Permissions**\nGuild permissions grant every single member of that Discord guild permission to use the commands belonging to that value. However, these permissions are overwritten by user permissions and will then no longer apply to that user.")
@@ -393,6 +408,10 @@ class instances(commands.Cog):
         await ctx.send(embed=embed)
 
 
+
+    ### r!instance config
+    ### r!instance config <setting>
+    ### r!instance config <setting> <value>
     @instance_command.command(name="config")
     @check_perms(instance=True)
     async def instance_config(self, ctx, key: str = None, value = None):
