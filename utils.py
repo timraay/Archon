@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
+from asyncio import TimeoutError
 
-from rcon.instances import Instance
+from rcon.instances import Instance, has_perms
 
 
 GAME_IMAGES = {
@@ -65,6 +66,83 @@ def add_empty_fields(embed: discord.Embed):
 def base_embed(instance, title: str = None, description: str = None, color=discord.Embed.Empty):
     if isinstance(instance, int):
         instance = Instance(instance)
-    embed = discord.Embed(title=title, description=description, color=color)
+    embed = EmbedMenu(title=title, description=description, color=color)
     embed.set_author(name=instance.name, icon_url=GAME_IMAGES[instance.game])
     return embed
+
+
+class EmbedMenu(discord.Embed):
+    def add_option(self, emoji, title, description):
+        option = {
+            'emoji': str(emoji),
+            'name': str(title),
+            'value': str(description)
+        }
+        try:
+            self._options.append(option)
+        except AttributeError:
+            self._options = [option]
+    
+    def remove_option(self, index):
+        try:
+            del self._options[index]
+        except (AttributeError, IndexError):
+            pass
+    
+    def set_option_at(self, index, *, emoji, title, description):
+        try:
+            option = self._option[index]
+        except (TypeError, IndexError, AttributeError):
+            raise IndexError('option index out of range')
+
+        option['emoji']: str(emoji)
+        option['name'] = str(title)
+        option['value'] = str(description)
+        return self
+    
+    def insert_option_at(self, index, *, emoji, title, description):
+        option = {
+            'emoji': str(emoji),
+            'name': str(title),
+            'value': str(description)
+        }
+
+        try:
+            self._options.insert(index, option)
+        except AttributeError:
+            self._options = [option]
+
+        return self
+
+    def clear_options(self):
+        try:
+            self._options.clear()
+        except AttributeError:
+            self._options = []
+
+    async def send(self, ctx, timeout=60):
+        emojis = []
+        self._fields = []
+        for i, option in enumerate(self._options):
+            field = {
+                'inline': True,
+                'name': option["emoji"] + " " + option["name"],
+                'value': option["value"]
+            }
+            self._fields.append(field)
+        
+        emojis = [option['emoji'] for option in self._options]
+        msg = await ctx.send(embed=self)
+        for emoji in emojis:
+            await msg.add_reaction(emoji)
+        
+        def check(reaction, user):
+            return str(reaction.emoji) in emojis and user == ctx.author
+        try:
+            reaction, user = await ctx.bot.wait_for('reaction_add', timeout=timeout, check=check)
+        except TimeoutError:
+            await msg.clear_reactions()
+            return None
+        else:
+            await msg.clear_reactions()
+            return reaction
