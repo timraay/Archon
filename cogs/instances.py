@@ -5,7 +5,7 @@ import asyncio
 from rcon.instances import get_available_instances, perms_to_dict, Instance, get_guild_instances, get_perms, set_player_perms, reset_player_perms, has_perms, check_perms, add_instance, is_owner
 from rcon.connection import RconAuthError
 
-from utils import add_empty_fields, base_embed
+from utils import add_empty_fields, base_embed, get_name
 
 
 CONFIG_DESC = {
@@ -18,6 +18,42 @@ CONFIG_DESC = {
     "rcon_log_channel_id": "**RCON Log Channel ID (rcon\\_log\\_channel\\_id)**\nThis is the channel ID of the channel to automatically log RCON actions to.",
     "match_log_channel_id": "**Match Log Channel ID (match\\_log\\_channel\\_id)**\nThis is the channel ID of the channel to automatically log match changes to."
 }
+
+
+
+CONFIGS = {
+    "chat_trigger_words": {
+        "name": "Trigger Words",
+        "emoji": "📜",
+        "short_desc": "Words that trigger an alert",
+        "long_desc": "Chat Trigger Words (chat\\_trigger\\_words)**\nChat trigger words send a notification through Discord whenever one of the specified words is mentioned by a player in-game. This allows admins to respond quickly to requests.\n\n`chat_trigger_words` is a comma-seperated list of words. What that means, is you can add as many trigger words as you like. Just make sure to put a comma inbetween them."
+    },
+    "chat_trigger_channel_id": {
+        "name": "Alerts Channel",
+        "emoji": "🔗",
+        "short_desc": "The ID of the channel to send alerts to",
+        "long_desc": ""
+    },
+    "chat_trigger_mentions": {
+        "name": "Mentions",
+        "emoji": "🗣️",
+        "short_desc": "What roles to mention when an alert is sent",
+        "long_desc": ""
+    },
+    "chat_trigger_confirmation": {
+        "name": "Confirmation Warning",
+        "emoji": "🪃",
+        "short_desc": "The message sent to the alerting player",
+        "long_desc": ""
+    },
+    "chat_trigger_cooldown": {
+        "name": "Alert Cooldown",
+        "emoji": "⏰",
+        "short_desc": "The cooldown inbetween alerts from one player.",
+        "long_desc": ""
+    }
+}
+
 
 
 
@@ -435,7 +471,6 @@ class instances(commands.Cog):
         
         else:
             old_value = instance.config[key]
-            if not old_value: old_value = "None"
             try: value = type(old_value)(value)
             except: raise commands.BadArgument('%s should be %s, not %s' % (value, type(old_value).__name__, type(value).__name__))
             else:
@@ -453,11 +488,76 @@ class instances(commands.Cog):
                 instance.config[key] = value
                 instance.store_config()
 
+                if not old_value: old_value = "None"
                 embed = base_embed(instance.id, title='Updated config')
-                embed.set_author(icon_url=ctx.guild.icon_url, name=ctx.guild.name)
                 embed.add_field(name="Old Value", value=str(old_value))
                 embed.add_field(name="New value", value=str(value))
                 await ctx.send(embed=embed)
+
+
+
+    ### r!alerts [option] [value]
+    @commands.command(description="Configure the chat alerts feature", usage="r!alerts [option] [value]", aliases=["triggers"])
+    @check_perms(instance=True)
+    async def alerts(self, ctx, option = None, value = None):
+        inst_id = self.bot.cache._get_selected_instance(ctx.author.id, ctx.channel.id)
+        inst = Instance(inst_id)
+
+        CONFIG_KEY = "chat_trigger_"
+        def update_value(option, value):
+            key = CONFIG_KEY + option
+            if key not in inst.config.keys():
+                raise KeyError("Config option %s does not exist" % key)
+            
+            try: value = type(inst.config[key])(value)
+            except ValueError: raise commands.BadArgument("Value should be %s, not %s" % (type(inst.config[key]).__name__, type(value).__name__))
+
+            inst.config[CONFIG_KEY + option] = value
+            inst.store_config()
+
+        if not option:
+            embed = base_embed(inst, title="Chat Alerts Configuration", description="To edit values, react with the emojis below or type `r!triggers <option> <value>`")
+            for k, v in inst.config.items():
+                if k.startswith(CONFIG_KEY):
+                    try: option_info = CONFIGS[k]
+                    except KeyError: continue
+                    value = inst.config[k] if inst.config[k] else "None"
+                    embed.add_option(option_info["emoji"], title=option_info['name'], description=f"Value: `{value}`\n*{option_info['short_desc']}*")
+
+            reaction = await embed.run(ctx)
+
+            if reaction:
+                (option, info) = [(k, v) for k, v in CONFIGS.items() if v['emoji'] == str(reaction.emoji)][0]
+                embed = base_embed(inst, title=f"Editing value {option}... ({info['name']})", description=f"{get_name(ctx.author)}, what should the new value be? To cancel, type \"cancel\".")
+                msg = await ctx.send(embed=embed)
+
+                def check(m): return m.author == ctx.author and m.channel == ctx.channel
+                try: m = await self.bot.wait_for('message', timeout=120, check=check)
+                except: await msg.edit(embed=base_embed(inst, description=f"{get_name(ctx.author)}, you took too long to respond."))
+                else:
+                    
+                    if m.content.lower() == "cancel":
+                        embed.description = "You cancelled the action."
+                        embed.color = discord.Color.dark_red()
+                        await msg.edit(embed=embed)
+                        return
+                    value = m.content
+                    
+                    old_value = inst.config[option]
+                    try: value = type(old_value)(value)
+                    except: raise commands.BadArgument('%s should be %s, not %s' % (value, type(old_value).__name__, type(value).__name__))
+                    else:
+                        
+                        if not old_value: old_value = "None"
+
+                        inst.config[option] = value
+                        inst.store_config()
+
+                        embed = base_embed(inst, title='Updated config')
+                        embed.add_field(name="Old Value", value=str(old_value))
+                        embed.add_field(name="New value", value=str(value))
+                        await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(instances(bot))

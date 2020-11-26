@@ -120,7 +120,7 @@ class EmbedMenu(discord.Embed):
         except AttributeError:
             self._options = []
 
-    async def send(self, ctx, timeout=60):
+    async def run(self, ctx, timeout=60):
         emojis = []
         self._fields = []
         for i, option in enumerate(self._options):

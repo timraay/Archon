@@ -215,6 +215,7 @@ class public(commands.Cog):
                     
                     if m.content.lower() == "cancel":
                         embed.description = "You cancelled the action."
+                        embed.color = discord.Color.dark_red()
                         await msg.edit(embed=embed)
                         return
                     
