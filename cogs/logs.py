@@ -22,7 +22,7 @@ class logs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         
-        self.check_server.add_exception_type(OSError, RconError)
+        self.check_server.add_exception_type(Exception)
         self.check_server.start()
 
 
