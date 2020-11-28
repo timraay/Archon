@@ -131,6 +131,8 @@ class EmbedMenu(discord.Embed):
             }
             self._fields.append(field)
         
+        self._fields = add_empty_fields(self)._fields
+
         emojis = [option['emoji'] for option in self._options]
         msg = await ctx.send(embed=self)
         for emoji in emojis:
