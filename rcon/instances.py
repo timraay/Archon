@@ -31,6 +31,7 @@ config
     - guild_id                  # The guild to apply to default perms and other features (default: guild of creation)
     - chat_trigger_words        # A comma-separated list of keywords to trigger alerts (default: !admin)
     - chat_trigger_channel_id   # The channel to send trigger alerts in
+    This desperately needs an update but I can't be bothered to.
 
 
 The third table in instances.db will be named "permissions" with a row for each assigned group of permissions.
@@ -67,7 +68,7 @@ If you sum the ints of the permissions you want to assign you get the permission
 db = sqlite3.connect('instances.db')
 cur = db.cursor()
 cur.execute('CREATE TABLE IF NOT EXISTS instances(instance_id INT NOT NULL, name TEXT, address TEXT, port INT, password TEXT, owner_id INT, game TEXT, default_perms INT, PRIMARY KEY (instance_id))')
-cur.execute('CREATE TABLE IF NOT EXISTS config(instance_id INT, guild_id INT, chat_trigger_words TEXT, chat_trigger_channel_id INT, chat_trigger_mentions TEXT, chat_log_channel_id INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
+cur.execute('CREATE TABLE IF NOT EXISTS config(instance_id INT, guild_id INT, chat_trigger_words TEXT, chat_trigger_channel_id INT, chat_trigger_mentions TEXT, chat_trigger_confirmation TEXT, chat_trigger_cooldown INT, chat_trigger_require_reason INT, chat_log_channel_id INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
 cur.execute('CREATE TABLE IF NOT EXISTS permissions(instance_id INT, user_id INT, perms INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
 db.commit()
 
@@ -128,13 +129,13 @@ def get_instances():
 def get_available_instances(user_id: int, guild_id: int = None):
     instances = []
 
-    cur.execute('SELECT instance_id FROM instances WHERE owner_id = ?', (user_id,))
+    cur.execute('SELECT instance_id FROM instances WHERE owner_id = ? ORDER BY instance_id', (user_id,))
     res = [(row[0], 31) for row in cur.fetchall()]
     for instance_id, perms in res:
         instance = Instance(instance_id)
         instances.append((instance, perms))
 
-    cur.execute('SELECT instance_id, perms FROM permissions WHERE user_id = ? AND perms > 0', (user_id,))
+    cur.execute('SELECT instance_id, perms FROM permissions WHERE user_id = ? AND perms > 0 ORDER BY instance_id', (user_id,))
     res = cur.fetchall()
     for instance_id, perms in res:
         if instance_id in [instance.id for instance, perms in instances]:
@@ -143,7 +144,7 @@ def get_available_instances(user_id: int, guild_id: int = None):
         instances.append((instance, perms))
     
     if guild_id:
-        cur.execute('SELECT instance_id, default_perms FROM instances WHERE instance_id IN (SELECT instance_id FROM config WHERE guild_id = ?) AND default_perms > 0', (guild_id,))
+        cur.execute('SELECT instance_id, default_perms FROM instances WHERE instance_id IN (SELECT instance_id FROM config WHERE guild_id = ?) AND default_perms > 0 ORDER BY instance_id', (guild_id,))
         res = cur.fetchall()
         for instance_id, perms in res:
             if instance_id in [instance.id for instance, perms in instances]:
@@ -244,7 +245,12 @@ class Instance:
         res = cur.fetchone()
         if not res:
             res = _insert_config_row(self.id)
-        self.id, self.config["guild_id"], self.config["chat_trigger_words"], self.config["chat_trigger_channel_id"], self.config["chat_trigger_mentions"], self.config["chat_log_channel_id"] = res
+        keys = ["guild_id", "chat_trigger_words", "chat_trigger_channel_id", "chat_trigger_mentions",
+        "chat_trigger_confirmation", "chat_trigger_cooldown", "chat_trigger_require_reason",
+        "chat_log_channel_id"]
+        self.id = res[0]
+        for val in res[1:]:
+            self.config[keys.pop(0)] = val
 
     def delete(self):
         cur.execute('DELETE FROM permissions WHERE instance_id = ?', (self.id,))
@@ -281,11 +287,11 @@ class Instance:
         self.default_perms = value
 
     def store_config(self):
-        cur.execute('UPDATE config SET guild_id = ?, chat_trigger_words = ?, chat_trigger_channel_id = ?, chat_trigger_mentions = ?, chat_log_channel_id = ? WHERE instance_id = ?', tuple( [val for val in self.config.values()] + [self.id] ))
+        cur.execute('UPDATE config SET guild_id = ?, chat_trigger_words = ?, chat_trigger_channel_id = ?, chat_trigger_mentions = ?, chat_trigger_confirmation = ?, chat_trigger_cooldown = ?, chat_trigger_require_reason = ?, chat_log_channel_id = ? WHERE instance_id = ?', tuple( [val for val in self.config.values()] + [self.id] ))
         db.commit()
 
 def _insert_config_row(instance_id: int):
-    cur.execute("INSERT INTO config VALUES (?,?,?,?,?,?)", (instance_id, 0, "!admin", 0, "", 0))
+    cur.execute("INSERT INTO config VALUES (?,?,?,?,?,?,?,?,?)", (instance_id, 0, "!admin", 0, "", "", 0, 0, 0))
     db.commit()
     cur.execute("SELECT * FROM config WHERE instance_id = ?", (instance_id,))
     return cur.fetchone()

@@ -26,7 +26,7 @@ CONFIGS = {
         "name": "Trigger Words",
         "emoji": "📜",
         "short_desc": "Words that trigger an alert",
-        "long_desc": "Chat Trigger Words (chat\\_trigger\\_words)**\nChat trigger words send a notification through Discord whenever one of the specified words is mentioned by a player in-game. This allows admins to respond quickly to requests.\n\n`chat_trigger_words` is a comma-seperated list of words. What that means, is you can add as many trigger words as you like. Just make sure to put a comma inbetween them."
+        "long_desc": "**Chat Trigger Words (chat\\_trigger\\_words)**\nChat trigger words send a notification through Discord whenever one of the specified words is mentioned by a player in-game. This allows admins to respond quickly to requests.\n\n`chat_trigger_words` is a comma-seperated list of words. What that means, is you can add as many trigger words as you like. Just make sure to put a comma inbetween them."
     },
     "chat_trigger_channel_id": {
         "name": "Alerts Channel",
@@ -49,7 +49,13 @@ CONFIGS = {
     "chat_trigger_cooldown": {
         "name": "Alert Cooldown",
         "emoji": "⏰",
-        "short_desc": "The cooldown inbetween alerts from one player.",
+        "short_desc": "The cooldown inbetween alerts from one player",
+        "long_desc": ""
+    },
+    "chat_trigger_require_reason": {
+        "name": "Require Reason",
+        "emoji": "🤏",
+        "short_desc": "Whether the player must include a reason",
         "long_desc": ""
     }
 }
@@ -499,13 +505,14 @@ class instances(commands.Cog):
     ### r!alerts [option] [value]
     @commands.command(description="Configure the chat alerts feature", usage="r!alerts [option] [value]", aliases=["triggers"])
     @check_perms(instance=True)
-    async def alerts(self, ctx, option = None, value = None):
+    async def alerts(self, ctx, option: str = None, value = None):
         inst_id = self.bot.cache._get_selected_instance(ctx.author.id, ctx.channel.id)
         inst = Instance(inst_id)
 
         CONFIG_KEY = "chat_trigger_"
         def update_value(option, value):
-            key = CONFIG_KEY + option
+            option = option.replace(CONFIG_KEY, "")
+            key = CONFIG_KEY+option
             if key not in inst.config.keys():
                 raise KeyError("Config option %s does not exist" % key)
             
@@ -516,13 +523,13 @@ class instances(commands.Cog):
             inst.store_config()
 
         if not option:
-            embed = base_embed(inst, title="Chat Alerts Configuration", description="To edit values, react with the emojis below or type `r!triggers <option> <value>`")
+            embed = base_embed(inst, title="Chat Alerts Configuration", description="To edit values, react with the emojis below or type `r!alerts <option> <value>`")
             for k, v in inst.config.items():
                 if k.startswith(CONFIG_KEY):
                     try: option_info = CONFIGS[k]
                     except KeyError: continue
                     value = inst.config[k] if inst.config[k] else "None"
-                    embed.add_option(option_info["emoji"], title=option_info['name'], description=f"Value: `{value}`\n*{option_info['short_desc']}*")
+                    embed.add_option(option_info["emoji"], title=option_info['name'], description=f"ID: {k.replace(CONFIG_KEY, '')}\nValue: `{value}`\n\n*{option_info['short_desc']}*")
 
             reaction = await embed.run(ctx)
 
@@ -553,11 +560,30 @@ class instances(commands.Cog):
                         inst.config[option] = value
                         inst.store_config()
 
-                        embed = base_embed(inst, title='Updated config')
+                        embed = base_embed(inst, title=f'Updated {CONFIGS[option]["name"]}')
                         embed.add_field(name="Old Value", value=str(old_value))
                         embed.add_field(name="New value", value=str(value))
                         await ctx.send(embed=embed)
 
+        elif value == None:
+            option = option.replace(CONFIG_KEY, "")
+            key = CONFIG_KEY+option
+            embed = base_embed(inst, title=f'Chat Alerts: {option}', description=f"> **Current value:**\n> {inst.config[key]}")
+            desc = CONFIGS[key]['long_desc'] if key in CONFIGS.keys() and CONFIGS[key]['long_desc'] else f"**{key}**\nNo description found."
+            embed.description = embed.description + "\n\n" + desc
+            await ctx.send(embed=embed)
+        
+        else:
+            option = option.replace(CONFIG_KEY, "")
+            key = CONFIG_KEY+option
+            old_value = inst.config[key]
+            update_value(option, value)
+
+            if not old_value: old_value = "None"
+            embed = base_embed(inst, title=f'Updated {CONFIGS[key]["name"]}')
+            embed.add_field(name="Old Value", value=str(old_value))
+            embed.add_field(name="New value", value=str(value))
+            await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(instances(bot))
