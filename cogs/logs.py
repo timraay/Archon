@@ -96,7 +96,6 @@ class logs(commands.Cog):
         new_chat_messages = inst.rcon.get_player_chat()
         inst.rcon.clear_player_chat()
 
-        default_embed = base_embed(inst.id)
         # Parse incoming messages
         # '[ChatAll] [SteamID:12345678901234567] [FP] Clan Member 1 : Hello world! '
         for message in new_chat_messages:
@@ -184,9 +183,11 @@ class logs(commands.Cog):
                 # Auto log
                 chat_channel = guild.get_channel(config["channel_log_chat"])
                 if chat_channel:
-                    embed = default_embed
-                    title = "{: <10}[{}]".format(channel, name)
-                    embed.set_field_at(0, name=title, value=discord.utils.escape_markdown(text))
+                    print(message)
+                    embed = base_embed(instance)
+                    title = "{: <20} {}".format("["+channel+"]", name)
+                    embed.add_field(name=title, value=discord.utils.escape_markdown(text))
+                    
                     embed.set_footer(text=f"Recorded at {datetime.now().strftime('%a, %b %d, %Y %I:%M %p')}")
 
                     if not player or channel == "Unknown":

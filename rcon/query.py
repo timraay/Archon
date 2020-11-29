@@ -214,5 +214,6 @@ if __name__ == '__main__':
     query = SourceQuery()
     query.connect(("116.202.243.119", 26032))
     #query.connect(("176.57.168.226", 28115))
+    #query.connect(("190.2.141.30", 26032))
     print(query.info())
     print(query.player())
