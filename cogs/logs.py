@@ -185,7 +185,7 @@ class logs(commands.Cog):
                 chat_channel = guild.get_channel(config["channel_log_chat"])
                 if chat_channel:
                     embed = default_embed
-                    title = "{: <20}[{}]".format(name, channel)
+                    title = "{: <10}[{}]".format(channel, name)
                     embed.set_field_at(0, name=title, value=discord.utils.escape_markdown(text))
                     embed.set_footer(text=f"Recorded at {datetime.now().strftime('%a, %b %d, %Y %I:%M %p')}")
 
