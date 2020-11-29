@@ -183,7 +183,6 @@ class logs(commands.Cog):
                 # Auto log
                 chat_channel = guild.get_channel(config["channel_log_chat"])
                 if chat_channel:
-                    print(message)
                     embed = base_embed(instance)
                     title = "{: <20} {}".format("["+channel+"]", name)
                     embed.add_field(name=title, value=discord.utils.escape_markdown(text))
