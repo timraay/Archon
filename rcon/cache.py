@@ -9,6 +9,7 @@ from discord.ext.commands import BadArgument
 from rcon import instances, logs
 from rcon.commands import Rcon
 from rcon.connection import RconAuthError
+from rcon.query import SourceQuery
 
 SQUAD_PLAYER_LIMITS = {
     "Command": 2,
@@ -232,6 +233,7 @@ class ServerInstance():
             old_player = self.select(steam_id=player.steam_id)
             if old_player:
                 players[i].online_since = old_player[0].online_since
+                players[i].score = old_player[0].score
         self.players = players
         self.ids = ids
 
@@ -327,6 +329,10 @@ class ServerInstance():
         self.team1.unassigned = [player.steam_id for player in self.select(team_id=1, squad_id=-1)]
         self.team2.unassigned = [player.steam_id for player in self.select(team_id=2, squad_id=-1)]
 
+    def _get_player_score(self):
+        # Need to know the query port...
+        pass
+
     def disconnect_player(self, player):
         if not isinstance(player, OnlinePlayer):
             player = self.get_player(player)
@@ -336,17 +342,19 @@ class ServerInstance():
         logs.ServerLogs(self.id).add('joins', f'{player.name} was disconnected after {str(player.online_time())} minutes')
 
 class OnlinePlayer():
-    def __init__(self, steam_id: int, name: str, team_id: int, squad_id: int, player_id: int, online_since: datetime = None):
+    def __init__(self, steam_id: int, name: str, team_id: int, squad_id: int, player_id: int, online_since: datetime = None, score: int = 0):
         self.steam_id = steam_id
         self.name = name
         self.team_id = team_id
         self.squad_id = squad_id
         self.player_id = player_id
         self.online_since = online_since if online_since else datetime.now()
+        self.score = score
 
-    def update(self, team_id: int = None, squad_id: int = None):
+    def update(self, team_id: int = None, squad_id: int = None, score: int = None):
         if team_id: self.team_id = team_id
         if squad_id: self.squad_id = squad_id
+        if score: self.score = score
         return self
 
     def __str__(self):
