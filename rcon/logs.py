@@ -35,6 +35,20 @@ class ServerLogs:
         res = cur.fetchall()
         logs = self._parse_logs(res, reverse)
         return logs
+    
+    def get_logs_after(self, last_id: int, category=None, limit=50, reverse=False):
+        if category: cur.execute('SELECT log_id, category, message, timestamp FROM logs WHERE instance_id = ? AND category = ? AND log_id > ? ORDER BY log_id DESC LIMIT ?', (self.id, category, last_id, limit))
+        else: cur.execute('SELECT log_id, category, message, timestamp FROM logs WHERE instance_id = ? AND log_id > ? ORDER BY log_id DESC LIMIT ?', (self.id, last_id, limit))
+        res = cur.fetchall()
+        logs = self._parse_logs(res, reverse)
+
+        max_id = self._get_max_log_id()
+
+        return max_id, logs
+
+    def _get_max_log_id(self):
+        cur.execute('SELECT MAX(log_id) FROM logs WHERE instance_id = ?', (self.id,))
+        return cur.fetchone()[0]
 
     def add(self, category: str, messages):
         if not isinstance(messages, (list, tuple)):

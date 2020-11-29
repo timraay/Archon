@@ -247,7 +247,7 @@ class Instance:
             res = _insert_config_row(self.id)
         keys = ["guild_id", "chat_trigger_words", "chat_trigger_channel_id", "chat_trigger_mentions",
         "chat_trigger_confirmation", "chat_trigger_cooldown", "chat_trigger_require_reason",
-        "chat_log_channel_id"]
+        "channel_log_chat", "channel_log_joins", "channel_log_match", "channel_log_rcon"]
         self.id = res[0]
         for val in res[1:]:
             self.config[keys.pop(0)] = val
@@ -287,11 +287,13 @@ class Instance:
         self.default_perms = value
 
     def store_config(self):
-        cur.execute('UPDATE config SET guild_id = ?, chat_trigger_words = ?, chat_trigger_channel_id = ?, chat_trigger_mentions = ?, chat_trigger_confirmation = ?, chat_trigger_cooldown = ?, chat_trigger_require_reason = ?, chat_log_channel_id = ? WHERE instance_id = ?', tuple( [val for val in self.config.values()] + [self.id] ))
+        cur.execute('''UPDATE config SET guild_id = ?, chat_trigger_words = ?, chat_trigger_channel_id = ?, chat_trigger_mentions = ?,
+        chat_trigger_confirmation = ?, chat_trigger_cooldown = ?, chat_trigger_require_reason = ?, channel_log_chat = ?, channel_log_joins = ?,
+        channel_log_match = ?, channel_log_rcon = ? WHERE instance_id = ?''', tuple( [val for val in self.config.values()] + [self.id] ))
         db.commit()
 
 def _insert_config_row(instance_id: int):
-    cur.execute("INSERT INTO config VALUES (?,?,?,?,?,?,?,?,?)", (instance_id, 0, "!admin", 0, "", "", 0, 0, 0))
+    cur.execute("INSERT INTO config VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (instance_id, 0, "!admin", 0, "", "", 0, 0, 0, 0, 0, 0))
     db.commit()
     cur.execute("SELECT * FROM config WHERE instance_id = ?", (instance_id,))
     return cur.fetchone()

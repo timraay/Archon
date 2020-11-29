@@ -57,6 +57,31 @@ CONFIGS = {
         "emoji": "🤏",
         "short_desc": "Whether the player must include a reason",
         "long_desc": ""
+    },
+
+    "channel_log_chat": {
+        "name": "Chat Log Channel",
+        "emoji": "💬",
+        "short_desc": "The ID of the channel to log chat messages in",
+        "long_desc": ""
+    },
+    "channel_log_joins": {
+        "name": "Joins Log Channel",
+        "emoji": "👥",
+        "short_desc": "The ID of the channel to log player connectivity in",
+        "long_desc": ""
+    },
+    "channel_log_match": {
+        "name": "Match Log Channel",
+        "emoji": "🌊",
+        "short_desc": "The ID of the channel to log match events in",
+        "long_desc": ""
+    },
+    "channel_log_rcon": {
+        "name": "RCON Log Channel",
+        "emoji": "🤖",
+        "short_desc": "The ID of the channel to log RCON actions in",
+        "long_desc": ""
     }
 }
 
@@ -584,6 +609,92 @@ class instances(commands.Cog):
             embed.add_field(name="Old Value", value=str(old_value))
             embed.add_field(name="New value", value=str(value))
             await ctx.send(embed=embed)
+
+    ### r!alerts [option] [value]
+    @commands.command(description="Configure the logging channels", usage="r!alerts [option] [value]", aliases=["logging", "log_channels"])
+    @check_perms(instance=True)
+    async def channels(self, ctx, option: str = None, value = None):
+        inst_id = self.bot.cache._get_selected_instance(ctx.author.id, ctx.channel.id)
+        inst = Instance(inst_id)
+
+        CONFIG_KEY = "channel_log_"
+        def update_value(option, value):
+            option = option.replace(CONFIG_KEY, "")
+            key = CONFIG_KEY+option
+            if key not in inst.config.keys():
+                raise KeyError("Config option %s does not exist" % key)
+            
+            try: value = type(inst.config[key])(value)
+            except ValueError: raise commands.BadArgument("Value should be %s, not %s" % (type(inst.config[key]).__name__, type(value).__name__))
+
+            inst.config[CONFIG_KEY + option] = value
+            inst.store_config()
+
+        if not option:
+            embed = base_embed(inst, title="Logging Channels Configuration", description="To edit values, react with the emojis below or type `r!channels <option> <value>`")
+            for k, v in inst.config.items():
+                if k.startswith(CONFIG_KEY):
+                    try: option_info = CONFIGS[k]
+                    except KeyError: continue
+                    value = inst.config[k] if inst.config[k] else "None"
+                    embed.add_option(option_info["emoji"], title=option_info['name'], description=f"ID: {k.replace(CONFIG_KEY, '')}\nValue: `{value}`\n\n*{option_info['short_desc']}*")
+
+            reaction = await embed.run(ctx)
+
+            if reaction:
+                (option, info) = [(k, v) for k, v in CONFIGS.items() if v['emoji'] == str(reaction.emoji)][0]
+                embed = base_embed(inst, title=f"Editing value {option}... ({info['name']})", description=f"{get_name(ctx.author)}, what should the new value be? To cancel, type \"cancel\".")
+                msg = await ctx.send(embed=embed)
+
+                def check(m): return m.author == ctx.author and m.channel == ctx.channel
+                try: m = await self.bot.wait_for('message', timeout=120, check=check)
+                except: await msg.edit(embed=base_embed(inst, description=f"{get_name(ctx.author)}, you took too long to respond."))
+                else:
+                    
+                    if m.content.lower() == "cancel":
+                        embed.description = "You cancelled the action."
+                        embed.color = discord.Color.dark_red()
+                        await msg.edit(embed=embed)
+                        return
+                    value = m.content
+                    
+                    old_value = inst.config[option]
+                    try: value = type(old_value)(value)
+                    except: raise commands.BadArgument('%s should be %s, not %s' % (value, type(old_value).__name__, type(value).__name__))
+                    else:
+                        
+                        if not old_value: old_value = "None"
+
+                        inst.config[option] = value
+                        inst.store_config()
+
+                        embed = base_embed(inst, title=f'Updated {CONFIGS[option]["name"]}')
+                        embed.add_field(name="Old Value", value=str(old_value))
+                        embed.add_field(name="New value", value=str(value))
+                        await ctx.send(embed=embed)
+
+        elif value == None:
+            option = option.replace(CONFIG_KEY, "")
+            key = CONFIG_KEY+option
+            embed = base_embed(inst, title=f'Chat Alerts: {option}', description=f"> **Current value:**\n> {inst.config[key]}")
+            desc = CONFIGS[key]['long_desc'] if key in CONFIGS.keys() and CONFIGS[key]['long_desc'] else f"**{key}**\nNo description found."
+            embed.description = embed.description + "\n\n" + desc
+            await ctx.send(embed=embed)
+        
+        else:
+            option = option.replace(CONFIG_KEY, "")
+            key = CONFIG_KEY+option
+            old_value = inst.config[key]
+            update_value(option, value)
+
+            if not old_value: old_value = "None"
+            embed = base_embed(inst, title=f'Updated {CONFIGS[key]["name"]}')
+            embed.add_field(name="Old Value", value=str(old_value))
+            embed.add_field(name="New value", value=str(value))
+            await ctx.send(embed=embed)
+
+
+
 
 def setup(bot):
     bot.add_cog(instances(bot))

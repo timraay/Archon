@@ -21,7 +21,8 @@ class logs(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        
+        self.last_seen_id = {}
+
         self.check_server.add_exception_type(Exception)
         self.check_server.start()
 
@@ -94,6 +95,7 @@ class logs(commands.Cog):
         new_chat_messages = inst.rcon.get_player_chat()
         inst.rcon.clear_player_chat()
 
+        default_embed = base_embed(inst.id)
         # Parse incoming messages
         # '[ChatAll] [SteamID:12345678901234567] [FP] Clan Member 1 : Hello world! '
         for message in new_chat_messages:
@@ -133,21 +135,37 @@ class logs(commands.Cog):
             if guild:
 
                 # Trigger words
-                channel = guild.get_channel(config["chat_trigger_channel_id"])
+                trigger_channel = guild.get_channel(config["chat_trigger_channel_id"])
                 trigger_words = config["chat_trigger_words"].split(",")
-                if channel and trigger_words:
+                if trigger_channel and trigger_words:
                     trigger_mentions = config["chat_trigger_mentions"]
                     for word in trigger_words:
                         word = word.strip().lower()
                         if word in text.lower():
-                            description = f"{name}: {text}"
+                            description = f"{name}: {discord.utils.escape_markdown(text)}"
                             embed = base_embed(inst.id, title="New Report", description=description, color=discord.Color.red())
-                            await channel.send(trigger_mentions, embed=embed)
+                            await trigger_channel.send(trigger_mentions, embed=embed)
                 
                 # Auto log
-                channel = guild.get_channel(config["chat_log_channel_id"])
-                if channel:
-                    await channel.send(f"**{instance.name}:** {message}")
+                chat_channel = guild.get_channel(config["channel_log_chat"])
+                if chat_channel:
+                    embed = default_embed
+                    title = "{: <20}[{}]".format(name, channel)
+                    embed.set_field_at(0, name=title, value=discord.utils.escape_markdown(text))
+                    embed.set_footer(text=f"Recorded at {datetime.now().strftime('%a, %b %d, %Y %I:%M %p')}")
+
+                    if not player or channel == "Unknown":
+                        embed.color = discord.Embed.Empty
+                    elif raw_data['channel'] == "ChatAll":
+                        embed.color = discord.Color.dark_gray()
+                    elif raw_data['channel'] == "ChatTeam":
+                        if player.team_id == 1: embed.color = discord.Color.from_rgb(66, 194, 245)
+                        else: embed.color = discord.Color.from_rgb(240, 36, 53)
+                    elif raw_data['channel'] == "ChatSquad":
+                        if player.team_id == 1: embed.color = discord.Color.from_rgb(0, 100, 255)
+                        else: embed.color = discord.Color.from_rgb(201, 4, 24)
+        
+                    await chat_channel.send(embed=embed)
 
 
     @tasks.loop(seconds=SECONDS_BETWEEN_CHECKS)
@@ -155,6 +173,67 @@ class logs(commands.Cog):
         for inst in self.bot.cache.instances.values():
             if inst:
                 await self._query(inst)
+                try:
+                    max_id = self.last_seen_id[inst.id]
+                except KeyError:
+                    max_id = ServerLogs(inst.id)._get_max_log_id()
+                    new_max_id = max_id
+                    new_logs = []
+                else:
+                    new_max_id, new_logs = ServerLogs(inst.id).get_logs_after(max_id)
+                print(max_id, new_max_id, new_logs)
+
+                config = Instance(inst.id).config
+                guild = self.bot.get_guild(config['guild_id'])
+                print("Guild:", guild)
+                if guild and new_logs:
+                    # Note: Chat logs are handled alongside the triggers
+                    channel_joins = guild.get_channel(config['channel_log_joins'])
+                    channel_match = guild.get_channel(config['channel_log_match'])
+                    channel_rcon = guild.get_channel(config['channel_log_rcon'])
+                    print(channel_joins)
+                    print(channel_match)
+                    print(channel_rcon)
+                    default_embed = base_embed(inst.id)
+
+                    if channel_rcon:
+                        logs = [log for log in new_logs if log['category'] == 'rcon']
+                        for log in logs:
+                            embed = default_embed
+                            embed.color = discord.Color.teal()
+                            embed.title = log['message']
+                            embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+                            await channel_match.send(embed=embed)
+                    if channel_joins:
+                        logs = [log for log in new_logs if log['category'] == 'joins']
+                        print("Joins:", logs)
+                        if logs:
+                            joins = [log['message'] for log in logs if log['message'].endswith(' connected')]
+                            leaves = [log['message'] for log in logs if not log['message'].endswith(' connected')]
+
+                            embed = default_embed
+                            embed.set_footer(text=f"Recorded at {logs[-1]['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+
+                            if joins:    
+                                embed.color = discord.Color.dark_green()
+                                embed.description = "\n".join(joins)
+                                await channel_match.send(embed=embed)
+                            if leaves:    
+                                embed.color = discord.Embed.Empty
+                                embed.description = "\n".join(leaves)
+                                await channel_match.send(embed=embed)
+                    if channel_match:
+                        logs = [log for log in new_logs if log['category'] == 'match']
+                        for log in logs:
+                            embed = default_embed
+                            embed.color = discord.Color.from_rgb(255,255,255)
+                            embed.title = log['message']
+                            embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+                            await channel_match.send(embed=embed)
+
+                self.last_seen_id[inst.id] = new_max_id
+
+
     @check_server.before_loop
     async def before_check(self):
         await self.bot.wait_until_ready()
