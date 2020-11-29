@@ -22,6 +22,7 @@ class logs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.last_seen_id = {}
+        self.trigger_cooldowns = {}
 
         self.check_server.add_exception_type(Exception)
         self.check_server.start()
@@ -127,6 +128,7 @@ class logs(commands.Cog):
             message = f"[{channel}] {name}: {text}"
             ServerLogs(inst.id).add("chat", message)
 
+
             # Do stuff with new messages
             instance = Instance(inst.id)
             config = instance.config
@@ -142,9 +144,42 @@ class logs(commands.Cog):
                     for word in trigger_words:
                         word = word.strip().lower()
                         if word in text.lower():
-                            description = f"{name}: {discord.utils.escape_markdown(text)}"
-                            embed = base_embed(inst.id, title="New Report", description=description, color=discord.Color.red())
-                            await trigger_channel.send(trigger_mentions, embed=embed)
+
+                            try:
+                                last_attempt = self.trigger_cooldowns[player.steam_id]
+                                cooldown = int(config['chat_trigger_cooldown'] - (datetime.now() - last_attempt).total_seconds())
+                            except KeyError:
+                                cooldown = -1
+                            if cooldown == 0:
+                                # The player sent multiple admin reports in the same period.
+                                # Let's not ping the admins twice, because why would we?
+                                trigger_mentions = ""
+                            
+                            if cooldown > 0:
+                                # The player tried sending admin reports too fast and is still in cooldown
+                                inst.rcon.warn(player.steam_id, f"You're sending reports too fast! Please wait {str(cooldown)}s and try again.")
+                                description = f"{name}: {discord.utils.escape_markdown(text)}"
+                                embed = base_embed(inst.id, description=description)
+                                embed.set_footer(text=f"Cooldown was active for this player ({str(cooldown)}s). He was asked to try again.")
+                                await trigger_channel.send(embed=embed)
+
+                            elif len(text.split()) < 3 and config["chat_trigger_require_reason"]:
+                                # The player didn't include a reason, which is required
+                                inst.rcon.warn(player.steam_id, f"Please include a reason in your '{word}' report and try again.")
+                                description = f"{name}: {discord.utils.escape_markdown(text)}"
+                                embed = base_embed(inst.id, description=description)
+                                embed.set_footer(text="No reason was included in this report. The player was asked to try again.")
+                                await trigger_channel.send(embed=embed)
+
+                            else:
+                                self.trigger_cooldowns[player.steam_id] = datetime.now()
+                                description = f"{name}: {discord.utils.escape_markdown(text)}"
+                                embed = base_embed(inst.id, title="New Report", description=description, color=discord.Color.red())
+                                await trigger_channel.send(trigger_mentions, embed=embed)
+                                if config['chat_trigger_confirmation']:
+                                    inst.rcon.warn(player.steam_id, config['chat_trigger_confirmation'])
+                            
+                            break
                 
                 # Auto log
                 chat_channel = guild.get_channel(config["channel_log_chat"])
@@ -181,22 +216,17 @@ class logs(commands.Cog):
                     new_logs = []
                 else:
                     new_max_id, new_logs = ServerLogs(inst.id).get_logs_after(max_id)
-                print(max_id, new_max_id, new_logs)
 
                 config = Instance(inst.id).config
                 guild = self.bot.get_guild(config['guild_id'])
-                print("Guild:", guild)
                 if guild and new_logs:
                     # Note: Chat logs are handled alongside the triggers
                     channel_joins = guild.get_channel(config['channel_log_joins'])
                     channel_match = guild.get_channel(config['channel_log_match'])
                     channel_rcon = guild.get_channel(config['channel_log_rcon'])
-                    print(channel_joins)
-                    print(channel_match)
-                    print(channel_rcon)
-                    default_embed = base_embed(inst.id)
 
                     if channel_rcon:
+                        default_embed = base_embed(inst.id)
                         logs = [log for log in new_logs if log['category'] == 'rcon']
                         for log in logs:
                             embed = default_embed
@@ -205,8 +235,8 @@ class logs(commands.Cog):
                             embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
                             await channel_match.send(embed=embed)
                     if channel_joins:
+                        default_embed = base_embed(inst.id)
                         logs = [log for log in new_logs if log['category'] == 'joins']
-                        print("Joins:", logs)
                         if logs:
                             joins = [log['message'] for log in logs if log['message'].endswith(' connected')]
                             leaves = [log['message'] for log in logs if not log['message'].endswith(' connected')]
@@ -223,6 +253,7 @@ class logs(commands.Cog):
                                 embed.description = "\n".join(leaves)
                                 await channel_match.send(embed=embed)
                     if channel_match:
+                        default_embed = base_embed(inst.id)
                         logs = [log for log in new_logs if log['category'] == 'match']
                         for log in logs:
                             embed = default_embed
