@@ -2,8 +2,11 @@ import discord
 from discord.ext import commands
 import asyncio
 
-from rcon.instances import get_available_instances, perms_to_dict, Instance, get_guild_instances, get_perms, set_player_perms, reset_player_perms, has_perms, check_perms, add_instance, is_owner
 from rcon.connection import RconAuthError
+from rcon.instances import (get_available_instances, perms_to_dict, Instance,
+                            get_guild_instances, get_perms, set_player_perms,
+                            reset_player_perms, has_perms, check_perms,
+                            add_instance, is_owner, edit_instance)
 
 from utils import add_empty_fields, base_embed, get_name
 
@@ -117,7 +120,7 @@ class instances(commands.Cog):
         embed = discord.Embed(title="Server Instances Help")
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         embed.add_field(name="Public Commands", value="```r!instance <name_or_id>\nr!instance list\nr!instance perms```", inline=False)
-        embed.add_field(name="Admin Commands", value="```r!instance perms help\nr!instance perms <user>\n\nr!instance perms <user> list\nr!instance perms <user> set <perms>\nr!instance perms <user> reset\nr!instance perms guild list\nr!instance perms guild set <perms>\nr!instance config\nr!instance config <key>\nr!instance config <key> <value>\n\nr!instance add\nr!instance reconnect\nr!instance disconnect\nr!instance delete```", inline=False)
+        embed.add_field(name="Admin Commands", value="```r!instance perms help\nr!instance perms <user>\n\nr!instance perms <user> list\nr!instance perms <user> set <perms>\nr!instance perms <user> reset\nr!instance perms guild list\nr!instance perms guild set <perms>\n\nr!alerts [option] [value]\nr!logging [option] [value]\nr!instance config\nr!instance config <key>\nr!instance config <key> <value>\n\nr!instance add\nr!instance reconnect\nr!instance disconnect\nr!instance credentials\nr!instance delete```", inline=False)
         await ctx.send(embed=embed)
 
     ### r!instance list
@@ -215,17 +218,37 @@ class instances(commands.Cog):
     @instance_command.command(name="create", aliases=["add"])
     @commands.has_permissions(administrator=True)
     async def create_instance(self, ctx):
-        embed = discord.Embed(title="Creating your instance...")
+        await self.ask_server_info(ctx, operation=0)
+
+    ### r!instance credentials
+    @instance_command.command(name="credentials", aliases=["creds", "edit"])
+    @is_owner()
+    async def change_credentials(self, ctx):
+        await self.ask_server_info(ctx, operation=1)
+
+
+    async def ask_server_info(self, ctx, operation = 0):
         try: await ctx.author.send(ctx.author.mention)
         except:
             await ctx.send(f":no_entry_sign: {ctx.author.mention}, please enable DMs")
             return
 
+        if operation not in [0, 1]:
+            operation = 0
+        
+        if operation == 1:
+            inst = Instance(self.bot.cache._get_selected_instance(ctx.author.id, ctx.guild.id))
+
         # Create embed
         def setup_embed(question):
             embed = discord.Embed(title=question, description="Type your answer down below. You can change your answers later.")
-            embed.set_author(name="Creating your instance...")
-            embed.set_footer(text="Support ticket will be canceled if the channel remains inactive for 5 minutes during its creation.")
+            if operation == 0:
+                embed = discord.Embed(title=question, description="Type your answer down below. You can change your answers later.")
+                embed.set_author(name="Creating your instance...")
+            elif operation == 1:
+                embed = base_embed(inst, title=question, description="Type your answer down below. You can change your answers later.")
+                embed._author['name'] = f"Editing {inst.name}..."
+            embed.set_footer(text="This action will be canceled if the channel remains inactive for 2 minutes during its creation.")
             return embed
 
         async def ask_game():
@@ -316,33 +339,36 @@ class instances(commands.Cog):
                 elif confirmation == "3⃣": password = await ask_password()
                 elif confirmation == "4⃣": name = await ask_name()
                 elif confirmation == "🗑️":
-                    await ctx.author.send("Instance creation cancelled.")
+                    if operation == 0: await ctx.author.send("Instance creation cancelled.")
+                    elif operation == 0: await ctx.author.send("Instance editing cancelled.")
                     return
                 values = [game, address, port, password, name]
                 
                 if confirmation == "✅":
                     msg = await ctx.author.send("Trying to establish a connection...")
                     try:
-                        inst = add_instance(game=values[0], address=values[1], port=values[2], password=values[3], name=values[4], owner_id=ctx.author.id)
+                        if operation == 0: inst = add_instance(game=values[0], address=values[1], port=values[2], password=values[3], name=values[4], owner_id=ctx.author.id)
+                        elif operation == 1: inst = edit_instance(inst.id, game=values[0], address=values[1], port=values[2], password=values[3], name=values[4])
                     except RconAuthError as e:
                         await ctx.author.send(f"Unable to connect to the server: {str(e)}")
                         await asyncio.sleep(3)
                         confirmation = ""
-                    except RconAuthError as e:
+                    except commands.BadArgument as e:
                         await ctx.author.send(f"An instance using this address already exists!")
                         await asyncio.sleep(3)
                         confirmation = ""
                     else:
                         await msg.edit(content="Connection established!")
                         self.bot.cache._connect_instance(inst)
-                        embed = base_embed(inst.id, title="Instance created!", description="You can now customize your instance further by setting permissions and changing config options. See `r!inst help` for more information.", color=discord.Color.green())
+                        embed = base_embed(inst.id, description="You can now customize your instance further by setting permissions and changing config options. See `r!inst help` for more information.", color=discord.Color.green())
+                        if operation == 0: embed.title = "Instance created!"
+                        elif operation == 1: embed.title = "Instance edited!"
                         await ctx.author.send(embed=embed)
 
         except asyncio.TimeoutError:
             await ctx.author.send("You took too long to respond. Execute the command again to retry.")
             return
 
-        
 
     ### r!instance perms [member]
     ### r!instance perms <member> list
@@ -531,107 +557,47 @@ class instances(commands.Cog):
     @commands.command(description="Configure the chat alerts feature", usage="r!alerts [option] [value]", aliases=["triggers"])
     @check_perms(instance=True)
     async def alerts(self, ctx, option: str = None, value = None):
-        inst_id = self.bot.cache._get_selected_instance(ctx.author.id, ctx.channel.id)
-        inst = Instance(inst_id)
-
         CONFIG_KEY = "chat_trigger_"
-        def update_value(option, value):
-            option = option.replace(CONFIG_KEY, "")
-            key = CONFIG_KEY+option
-            if key not in inst.config.keys():
-                raise KeyError("Config option %s does not exist" % key)
-            
-            try: value = type(inst.config[key])(value)
-            except ValueError: raise commands.BadArgument("Value should be %s, not %s" % (type(inst.config[key]).__name__, type(value).__name__))
+        CONFIG_TITLE = "Chat Alerts"
+        await self.config_menu(ctx, CONFIG_TITLE, CONFIG_KEY, option, value)
 
-            inst.config[CONFIG_KEY + option] = value
-            inst.store_config()
-
-        if not option:
-            embed = base_embed(inst, title="Chat Alerts Configuration", description="To edit values, react with the emojis below or type `r!alerts <option> <value>`")
-            for k, v in inst.config.items():
-                if k.startswith(CONFIG_KEY):
-                    try: option_info = CONFIGS[k]
-                    except KeyError: continue
-                    value = inst.config[k] if inst.config[k] else "None"
-                    embed.add_option(option_info["emoji"], title=option_info['name'], description=f"ID: {k.replace(CONFIG_KEY, '')}\nValue: `{value}`\n\n*{option_info['short_desc']}*")
-
-            reaction = await embed.run(ctx)
-
-            if reaction:
-                (option, info) = [(k, v) for k, v in CONFIGS.items() if v['emoji'] == str(reaction.emoji)][0]
-                embed = base_embed(inst, title=f"Editing value {option}... ({info['name']})", description=f"{get_name(ctx.author)}, what should the new value be? To cancel, type \"cancel\".")
-                msg = await ctx.send(embed=embed)
-
-                def check(m): return m.author == ctx.author and m.channel == ctx.channel
-                try: m = await self.bot.wait_for('message', timeout=120, check=check)
-                except: await msg.edit(embed=base_embed(inst, description=f"{get_name(ctx.author)}, you took too long to respond."))
-                else:
-                    
-                    if m.content.lower() == "cancel":
-                        embed.description = "You cancelled the action."
-                        embed.color = discord.Color.dark_red()
-                        await msg.edit(embed=embed)
-                        return
-                    value = m.content
-                    
-                    old_value = inst.config[option]
-                    try: value = type(old_value)(value)
-                    except: raise commands.BadArgument('%s should be %s, not %s' % (value, type(old_value).__name__, type(value).__name__))
-                    else:
-                        
-                        if not old_value: old_value = "None"
-
-                        inst.config[option] = value
-                        inst.store_config()
-
-                        embed = base_embed(inst, title=f'Updated {CONFIGS[option]["name"]}')
-                        embed.add_field(name="Old Value", value=str(old_value))
-                        embed.add_field(name="New value", value=str(value))
-                        await ctx.send(embed=embed)
-
-        elif value == None:
-            option = option.replace(CONFIG_KEY, "")
-            key = CONFIG_KEY+option
-            embed = base_embed(inst, title=f'Chat Alerts: {option}', description=f"> **Current value:**\n> {inst.config[key]}")
-            desc = CONFIGS[key]['long_desc'] if key in CONFIGS.keys() and CONFIGS[key]['long_desc'] else f"**{key}**\nNo description found."
-            embed.description = embed.description + "\n\n" + desc
-            await ctx.send(embed=embed)
-        
-        else:
-            option = option.replace(CONFIG_KEY, "")
-            key = CONFIG_KEY+option
-            old_value = inst.config[key]
-            update_value(option, value)
-
-            if not old_value: old_value = "None"
-            embed = base_embed(inst, title=f'Updated {CONFIGS[key]["name"]}')
-            embed.add_field(name="Old Value", value=str(old_value))
-            embed.add_field(name="New value", value=str(value))
-            await ctx.send(embed=embed)
-
-    ### r!alerts [option] [value]
-    @commands.command(description="Configure the logging channels", usage="r!alerts [option] [value]", aliases=["logging", "log_channels"])
+    ### r!logging [option] [value]
+    @commands.command(description="Configure the logging channels", usage="r!alerts [option] [value]", aliases=["channels", "log_channels", "logchannels"])
     @check_perms(instance=True)
-    async def channels(self, ctx, option: str = None, value = None):
+    async def logging(self, ctx, option: str = None, value = None):
+        CONFIG_KEY = "channel_log_"
+        CONFIG_TITLE = "Logging Channels"
+        await self.config_menu(ctx, CONFIG_TITLE, CONFIG_KEY, option, value)
+
+
+
+    async def config_menu(self, ctx, config_title, config_key, option: str = None, value = None):
         inst_id = self.bot.cache._get_selected_instance(ctx.author.id, ctx.channel.id)
         inst = Instance(inst_id)
+        CONFIG_KEY = str(config_key)
+        CONFIG_TITLE = str(config_title)
 
-        CONFIG_KEY = "channel_log_"
+        if option:
+            option = option.replace(CONFIG_KEY, "")
+            key = CONFIG_KEY+option
+
         def update_value(option, value):
             option = option.replace(CONFIG_KEY, "")
             key = CONFIG_KEY+option
             if key not in inst.config.keys():
                 raise KeyError("Config option %s does not exist" % key)
-            
+            old_value = inst.config[key]
+
             try: value = type(inst.config[key])(value)
             except ValueError: raise commands.BadArgument("Value should be %s, not %s" % (type(inst.config[key]).__name__, type(value).__name__))
 
             inst.config[CONFIG_KEY + option] = value
             inst.store_config()
 
+            return old_value, value
+
         if not option:
-            embed = base_embed(inst, title="Logging Channels Configuration", description="To edit values, react with the emojis below or type `r!channels <option> <value>`")
+            embed = base_embed(inst, title=f"{CONFIG_TITLE} Configuration", description=f"To edit values, react with the emojis below or type `r!{ctx.command.name} <option> <value>`")
             for k, v in inst.config.items():
                 if k.startswith(CONFIG_KEY):
                     try: option_info = CONFIGS[k]
@@ -642,8 +608,9 @@ class instances(commands.Cog):
             reaction = await embed.run(ctx)
 
             if reaction:
-                (option, info) = [(k, v) for k, v in CONFIGS.items() if v['emoji'] == str(reaction.emoji)][0]
-                embed = base_embed(inst, title=f"Editing value {option}... ({info['name']})", description=f"{get_name(ctx.author)}, what should the new value be? To cancel, type \"cancel\".")
+                (key, info) = [(k, v) for k, v in CONFIGS.items() if v['emoji'] == str(reaction.emoji)][0]
+                option = key.replace(CONFIG_KEY, "")
+                embed = base_embed(inst, title=f"Editing value {key}... ({info['name']})", description=f"{get_name(ctx.author)}, what should the new value be? To cancel, type \"cancel\".")
                 msg = await ctx.send(embed=embed)
 
                 def check(m): return m.author == ctx.author and m.channel == ctx.channel
@@ -658,43 +625,26 @@ class instances(commands.Cog):
                         return
                     value = m.content
                     
-                    old_value = inst.config[option]
-                    try: value = type(old_value)(value)
-                    except: raise commands.BadArgument('%s should be %s, not %s' % (value, type(old_value).__name__, type(value).__name__))
-                    else:
-                        
-                        if not old_value: old_value = "None"
+                    old_value, value = update_value(option, value)
 
-                        inst.config[option] = value
-                        inst.store_config()
-
-                        embed = base_embed(inst, title=f'Updated {CONFIGS[option]["name"]}')
-                        embed.add_field(name="Old Value", value=str(old_value))
-                        embed.add_field(name="New value", value=str(value))
-                        await ctx.send(embed=embed)
+                    embed = base_embed(inst, title=f'Updated {CONFIGS[key]["name"]}')
+                    embed.add_field(name="Old Value", value=str(old_value))
+                    embed.add_field(name="New value", value=str(value))
+                    await ctx.send(embed=embed)
 
         elif value == None:
-            option = option.replace(CONFIG_KEY, "")
-            key = CONFIG_KEY+option
             embed = base_embed(inst, title=f'Chat Alerts: {option}', description=f"> **Current value:**\n> {inst.config[key]}")
             desc = CONFIGS[key]['long_desc'] if key in CONFIGS.keys() and CONFIGS[key]['long_desc'] else f"**{key}**\nNo description found."
             embed.description = embed.description + "\n\n" + desc
             await ctx.send(embed=embed)
         
         else:
-            option = option.replace(CONFIG_KEY, "")
-            key = CONFIG_KEY+option
-            old_value = inst.config[key]
-            update_value(option, value)
+            old_value, value = update_value(option, value)
 
-            if not old_value: old_value = "None"
             embed = base_embed(inst, title=f'Updated {CONFIGS[key]["name"]}')
             embed.add_field(name="Old Value", value=str(old_value))
             embed.add_field(name="New value", value=str(value))
             await ctx.send(embed=embed)
-
-
-
 
 def setup(bot):
     bot.add_cog(instances(bot))
