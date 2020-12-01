@@ -53,11 +53,11 @@ def get_player_input_type(player: str):
             return "name"
 
 
-def add_empty_fields(embed: discord.Embed):
-    fields = len(embed.fields)
+def add_empty_fields(embed):
+    fields = len(embed._fields)
     if fields > 3:
         empty_fields_to_add = 3 - (fields % 3)
-        if empty_fields_to_add in range(1, 2):
+        if empty_fields_to_add in [1, 2]:
             for i in range(empty_fields_to_add):
                 embed.add_field(name="‏‎ ", value="‏‎ ") # These are special characters that can not be seen
     return embed
