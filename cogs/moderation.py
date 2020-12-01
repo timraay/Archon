@@ -174,7 +174,7 @@ class moderation(commands.Cog):
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} disbanded {team.faction_short}/Squad{squad_id} for "{reason}"')
 
     
-    @commands.command(description="Go to the next match", usage="r!skip_match [map name]", aliases=["skip", "end", "end_match"])
+    @commands.command(description="Go to the next match", usage="r!skip_match [map name]", aliases=["skip", "end", "end_match", "switch_map", "switch"])
     @check_perms(moderation=True)
     async def skip_match(self, ctx, *, map_name: str = ""):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
@@ -197,7 +197,7 @@ class moderation(commands.Cog):
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} restarted the current match')
 
-    @commands.command(description="View or set the next map", usage="r!set_next_map [map name]", aliases=["next", "next_map", "queue", "queue_map", "view_map"])
+    @commands.command(description="Set the next map", usage="r!set_next_map [map name]", aliases=["next", "next_map", "queue", "queue_map", "view_map"])
     @check_perms(moderation=True)
     async def set_next_map(self, ctx, *, map_name: str):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
