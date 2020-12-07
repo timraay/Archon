@@ -54,7 +54,8 @@ def get_player_input_type(player: str):
 
 
 def add_empty_fields(embed):
-    fields = len(embed._fields)
+    try: fields = len(embed._fields)
+    except AttributeError: fields = 0
     if fields > 3:
         empty_fields_to_add = 3 - (fields % 3)
         if empty_fields_to_add in [1, 2]:
