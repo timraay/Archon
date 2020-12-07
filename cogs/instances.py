@@ -162,7 +162,9 @@ class instances(commands.Cog):
         embed = discord.Embed(title=f'Selected the "{instance.name}" instance', description=f"> **Perms:** {perms}")
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 
-        await ctx.send(embed=embed)
+        msg = await ctx.send(embed=embed)
+        await asyncio.sleep(4)
+        await msg.delete()
 
     ### r!instance connect
     @instance_command.command(name="connect", aliases=["reconnect"])
