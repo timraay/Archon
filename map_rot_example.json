@@ -15,7 +15,12 @@
                     "weight": 2
                 }
             ],
-            "weight": 3
+            "weight": 4,
+            "conditions": {
+                "players": {
+                    "min": 40
+                }
+            }
         },
         {
             "name": "Ansoncourt Frontlines",
@@ -33,8 +38,8 @@
                     "max": 80
                 },
                 "time": {
-                    "timezone": "UTC",
-                    "min": "15:00",
+                    "timezone": "CET",
+                    "min": "14:00",
                     "max": "21:30"
                 }
             }
