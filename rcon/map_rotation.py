@@ -12,9 +12,13 @@ with open('maps_squad.txt', 'r') as f:
 
 
 class MapRotation:
-    def import_rotation(self, fp):
-        with open(fp, 'r') as f:
-            content = json.loads(f.read())
+    def import_rotation(self, fp=None, content=None):
+        if fp:
+            with open(fp, 'r') as f:
+                content = json.loads(f.read())
+        elif not content:
+            raise ValueError('Expected File-like or string')
+        print(type(content), content)
 
         # Get map cooldown
         try: content['map_cooldown']
@@ -27,7 +31,7 @@ class MapRotation:
         # Set current and upcoming map
         self.cooldowns = {str(self.current_map): self.map_cooldown}
         self.current_map = Map(self.current_map)
-        self.next_map = self._get_next_map()
+        self.next_map = self.map_changed(self.current_map)
 
     def _get_next_map(self):
         all_entries = self.map_rotation.get_entries()
@@ -50,12 +54,11 @@ class MapRotation:
             if not self.cooldowns[i]: self.cooldowns.pop(i)
 
     def map_changed(self, new_map):
-        self.cooldowns[str(new_map)] = self.map_cooldown + 1
+        self._decrease_cooldown()
+        self.cooldowns[str(new_map)] = self.map_cooldown
         if str(new_map) == str(self.next_map) or not self.next_map.validate(len(self.players)):
             self.next_map = self._get_next_map()
             self.rcon.set_next_map(self.next_map)
-        
-        self._decrease_cooldown()
 
         return self.next_map
         

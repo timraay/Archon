@@ -248,7 +248,7 @@ class public(commands.Cog):
 
                         
 
-    @commands.command(description="View the current and upcoming map", usage="r!map", aliases=["map_rotation", "maprotation", "rotation"])
+    @commands.command(description="View the current and upcoming map", usage="r!map")
     @check_perms(public=True)
     async def map(self, ctx):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)

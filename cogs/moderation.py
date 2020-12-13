@@ -202,6 +202,7 @@ class moderation(commands.Cog):
     async def set_next_map(self, ctx, *, map_name: str):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
         res = inst.rcon.set_next_map(map_name)
+        inst.next_map = map_name
 
         embed = base_embed(self.bot.cache.instance(ctx.author.id, ctx.guild.id).id, title="Queued the next map", description=res)
         await ctx.send(embed=embed)
