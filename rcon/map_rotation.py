@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from numpy.random import choice
 import pytz
-
+from copy import deepcopy
 
 with open('maps_btw.txt', 'r') as f:
     MAPS_BTW = [line for line in f.readlines() if line.strip()]
@@ -12,28 +12,29 @@ with open('maps_squad.txt', 'r') as f:
 
 
 class MapRotation:
-    def __init__(self, fp):
-        self.import_file(fp)
-        self.cooldowns = {}
-
-    def import_file(self, fp):
+    def import_rotation(self, fp):
         with open(fp, 'r') as f:
             content = json.loads(f.read())
 
         # Get map cooldown
-        try: self.map_cooldown = content['map_cooldown']
+        try: content['map_cooldown']
         except KeyError: self.map_cooldown = 1
         else: self.map_cooldown = content['map_cooldown'] if content['map_cooldown'] > 0 else 1
 
         # Get maps
-        self.pool = Pool(content['maps'])
+        self.map_rotation = Pool(content['maps'])
 
-    def _next_map(self):
-        all_entries = self.pool.get_entries()
+        # Set current and upcoming map
+        self.cooldowns = {str(self.current_map): self.map_cooldown}
+        self.current_map = Map(self.current_map)
+        self.next_map = self._get_next_map()
+
+    def _get_next_map(self):
+        all_entries = self.map_rotation.get_entries()
         for entry in all_entries[::-1]:
-            if not entry.validate(20) or entry.name in self.cooldowns.keys():
+            if not entry.validate(len(self.players)) or entry.name in self.cooldowns.keys() or entry.name == str(self.current_map):
                 all_entries.remove(entry)
-
+        
         weights = [entry.weight for entry in all_entries]
         total_weight = sum(weights)
         probabilities = [weight / total_weight for weight in weights]
@@ -43,6 +44,21 @@ class MapRotation:
         draw = choice(all_entries, p=probabilities)
         return draw
 
+    def _decrease_cooldown(self):
+        for i in list(self.cooldowns):
+            self.cooldowns[i] -= 1
+            if not self.cooldowns[i]: self.cooldowns.pop(i)
+
+    def map_changed(self, new_map):
+        self.cooldowns[str(new_map)] = self.map_cooldown + 1
+        if str(new_map) == str(self.next_map) or not self.next_map.validate(len(self.players)):
+            self.next_map = self._get_next_map()
+            self.rcon.set_next_map(self.next_map)
+        
+        self._decrease_cooldown()
+
+        return self.next_map
+        
 
 
 class Pool:
@@ -93,16 +109,19 @@ class Pool:
 
 class Map:
     def __init__(self, name, weight = 1, conditions = {}):
-        self.name = name
+        self.name = str(name)
         self.weight = weight if weight > 0 else 1
         self.conditions = [Condition(k, v) for k, v in conditions.items()]
     
+    def __str__(self):
+        return self.name
+
     @property
     def content(self):
         return self.name
 
     def get_entries(self):
-        return [self]
+        return [deepcopy(self)]
 
     def validate(self, players=None):
         for condition in self.conditions:
@@ -137,7 +156,7 @@ class Condition:
     
     def validate(self, players=None):
         if self.type == 'players':
-            if players:
+            if players != None:
                 if players >= self.min and players <= self.max: return True
                 else: return False
             else:
@@ -157,8 +176,9 @@ class MapRotationError(Exception):
     pass
 
 
-
+'''
 if __name__ == '__main__':
     from pathlib import Path
     rotation = MapRotation(Path("./map_rot_example.json"))
-    print("draw:", rotation._next_map().name)
+    print("draw:", rotation._get_next_map().name)
+'''

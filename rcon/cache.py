@@ -10,6 +10,7 @@ from rcon import instances, logs
 from rcon.commands import Rcon
 from rcon.connection import RconAuthError
 from rcon.query import SourceQuery
+from rcon.map_rotation import MapRotation, Map
 
 SQUAD_PLAYER_LIMITS = {
     "Command": 2,
@@ -113,11 +114,12 @@ class Cache():
             del self.instances[instance_id]
         instances.Instance(instance_id).delete()
 
-class ServerInstance():
+class ServerInstance(MapRotation):
     def __init__(self, instance_id, rcon):
         self.id = instance_id
         self.rcon = rcon
 
+        self.map_rotation = None
         self.current_map = None
         self.next_map = None
         self.last_map_change = None
@@ -270,9 +272,8 @@ class ServerInstance():
             self.is_transitioning = True
             current_map = self.current_map
 
-        if self.current_map and current_map != self.current_map: # Map has changed
+        if self.current_map and str(current_map) != str(self.current_map): # Map has changed
             self.is_transitioning = True
-            time = datetime.now().strftime("%H:%M")
             message = f"Map changed from {self.current_map} to {current_map}."
             if self.last_map_change:
                 message += f" The match lasted {str(int((datetime.now() - self.last_map_change).total_seconds() / 60))} minutes."
@@ -280,9 +281,12 @@ class ServerInstance():
                 message += " Match duration is unknown."
             logs.ServerLogs(self.id).add('match', message)
             self.last_map_change = datetime.now()
+
+            if self.map_rotation:
+                next_map = self.map_changed(current_map)
         
-        self.current_map = current_map
-        self.next_map = next_map
+        if str(self.current_map) != str(current_map): self.current_map = Map(current_map)
+        if str(self.next_map) != str(next_map): self.next_map = Map(next_map)
         
     def _parse_squads(self):
         res = self.rcon.list_squads()

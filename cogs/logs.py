@@ -181,19 +181,14 @@ class logs(commands.Cog):
                     new_logs = []
                 else:
                     new_max_id, new_logs = ServerLogs(inst.id).get_logs_after(max_id)
-                print(max_id, new_max_id, new_logs)
 
                 config = Instance(inst.id).config
                 guild = self.bot.get_guild(config['guild_id'])
-                print("Guild:", guild)
                 if guild and new_logs:
                     # Note: Chat logs are handled alongside the triggers
                     channel_joins = guild.get_channel(config['channel_log_joins'])
                     channel_match = guild.get_channel(config['channel_log_match'])
                     channel_rcon = guild.get_channel(config['channel_log_rcon'])
-                    print(channel_joins)
-                    print(channel_match)
-                    print(channel_rcon)
                     default_embed = base_embed(inst.id)
 
                     if channel_rcon:
@@ -206,7 +201,6 @@ class logs(commands.Cog):
                             await channel_match.send(embed=embed)
                     if channel_joins:
                         logs = [log for log in new_logs if log['category'] == 'joins']
-                        print("Joins:", logs)
                         if logs:
                             joins = [log['message'] for log in logs if log['message'].endswith(' connected')]
                             leaves = [log['message'] for log in logs if not log['message'].endswith(' connected')]
