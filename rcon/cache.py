@@ -297,6 +297,7 @@ class ServerInstance(MapRotation):
 
         if not self.next_map.validate():
             self.next_map = self._get_next_map()
+            self.rcon.set_next_map(str(self.next_map))
         
     def _parse_squads(self):
         res = self.rcon.list_squads()
