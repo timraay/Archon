@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from rcon.commands import Rcon
-from rcon.instances import check_perms
+from rcon.instances import check_perms, Instance
 
 from utils import Config, base_embed
 config = Config()
@@ -61,7 +61,7 @@ class administration(commands.Cog):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
         embed = base_embed(inst.id, title="Custom Map Rotation")
         
-        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation"
+        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"
 
         if os.path.exists(Path(f'rotations/{str(inst.id)}.json')):
             if inst.map_rotation:
@@ -105,7 +105,7 @@ class administration(commands.Cog):
             f.write(json.dumps(content, indent=2))
 
         embed = base_embed(inst.id, title="Uploaded and enabled Custom Map Rotation", color=discord.Color.green())
-        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation"
+        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"
         try: maps = sorted(set([str(entry) for entry in inst.map_rotation.get_entries()]))
         except: maps = ["Failed to fetch maps"]
         embed.add_field(name="Maps in rotation:", value="\n".join(maps))
@@ -128,7 +128,7 @@ class administration(commands.Cog):
         inst.import_rotation(fp=path)
 
         embed = base_embed(inst.id, title="Enabled Custom Map Rotation", color=discord.Color.green())
-        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation"
+        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"
         try: maps = sorted(set([str(entry) for entry in inst.map_rotation.get_entries()]))
         except: maps = ["Failed to fetch maps"]
         embed.add_field(name="Maps in rotation:", value="\n".join(maps))
@@ -147,9 +147,22 @@ class administration(commands.Cog):
         inst.map_rotation = None
 
         embed = base_embed(inst.id, title="Disabled Custom Map Rotation", color=discord.Color.red())
-        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation"
+        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"
 
         await ctx.send(embed=embed)
+    
+    @maprotation.command()
+    @check_perms(administration=True)
+    async def download(self, ctx):
+        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+
+        path = Path(f'rotations/{str(inst.id)}.json')
+        if not os.path.exists(path):
+            await ctx.send(':no_entry_sign: You don\'t have a custom rotation uploaded!')
+            return
+
+        f = discord.File(fp=path, filename=f"{Instance(inst.id).name} map rotation.json")
+        await ctx.send(file=f)
 
 def setup(bot):
     bot.add_cog(administration(bot))
