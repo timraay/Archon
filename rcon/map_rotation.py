@@ -118,6 +118,11 @@ class Map:
     def __str__(self):
         return self.name
 
+    def __eq__(self, other):
+        if isinstance(other, (Map, str)):
+            return str(self) == str(other)
+        return NotImplemented
+
     @property
     def content(self):
         return self.name

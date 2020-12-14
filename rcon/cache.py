@@ -265,12 +265,12 @@ class ServerInstance(MapRotation):
 
         # Try to read the current map
         try:
-            current_map = re.search(r"Current map is (.+),", res).group(1)
+            current_map = Map(re.search(r"Current map is (.+),", res).group(1))
         except:
             current_map = self.current_map
         # Try to read the upcoming map
         try:
-            next_map = re.search(r"Next map is (.+)", res).group(1)
+            next_map = Map(re.search(r"Next map is (.+)", res).group(1))
         except:
             next_map = self.next_map
 
@@ -279,7 +279,7 @@ class ServerInstance(MapRotation):
             self.is_transitioning = True
             current_map = self.current_map
 
-        if self.current_map and str(current_map) != str(self.current_map): # Map has changed
+        if self.current_map and current_map != self.current_map: # Map has changed
             self.is_transitioning = True
             message = f"Map changed from {self.current_map} to {current_map}."
             if self.last_map_change:
@@ -292,8 +292,11 @@ class ServerInstance(MapRotation):
             if self.map_rotation:
                 next_map = self.map_changed(current_map)
         
-        if str(self.current_map) != str(current_map): self.current_map = Map(current_map)
-        if str(self.next_map) != str(next_map): self.next_map = Map(next_map)
+        if self.current_map != current_map: self.current_map = current_map
+        if self.next_map != next_map: self.next_map = next_map
+
+        if not self.next_map.validate():
+            self.next_map = self._get_next_map()
         
     def _parse_squads(self):
         res = self.rcon.list_squads()
