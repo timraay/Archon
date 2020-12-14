@@ -7,6 +7,9 @@ token.txt
 # Bot icon
 *.xcf
 
+# Custom map rotations
+rotations/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
