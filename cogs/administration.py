@@ -97,8 +97,7 @@ class administration(commands.Cog):
         
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
 
-        content = str(await attachment.read(), 'utf-8').strip('"')
-        print(content[0])
+        content = str(await attachment.read(), 'utf-8')
         content = json.loads(content)
 
         inst.import_rotation(content=content)
@@ -110,6 +109,45 @@ class administration(commands.Cog):
         try: maps = sorted(set([str(entry) for entry in inst.map_rotation.get_entries()]))
         except: maps = ["Failed to fetch maps"]
         embed.add_field(name="Maps in rotation:", value="\n".join(maps))
+
+        await ctx.send(embed=embed)
+
+    @maprotation.command()
+    @check_perms(administration=True)
+    async def enable(self, ctx):        
+        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+
+        if inst.map_rotation:
+            await ctx.send(':no_entry_sign: Custom Map Rotation is already enabled!')
+            return
+        path = Path(f'rotations/{str(inst.id)}.json')
+        if not os.path.exists(path):
+            await ctx.send(':no_entry_sign: Upload a custom rotation first using `r!rotation upload`!')
+            return
+        
+        inst.import_rotation(fp=path)
+
+        embed = base_embed(inst.id, title="Enabled Custom Map Rotation", color=discord.Color.green())
+        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation"
+        try: maps = sorted(set([str(entry) for entry in inst.map_rotation.get_entries()]))
+        except: maps = ["Failed to fetch maps"]
+        embed.add_field(name="Maps in rotation:", value="\n".join(maps))
+
+        await ctx.send(embed=embed)
+
+    @maprotation.command()
+    @check_perms(administration=True)
+    async def disable(self, ctx):        
+        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+
+        if inst.map_rotation == None:
+            await ctx.send(':no_entry_sign: Custom Map Rotation is already disabled!')
+            return
+        
+        inst.map_rotation = None
+
+        embed = base_embed(inst.id, title="Disabled Custom Map Rotation", color=discord.Color.red())
+        embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation"
 
         await ctx.send(embed=embed)
 

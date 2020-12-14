@@ -17,8 +17,7 @@ class MapRotation:
             with open(fp, 'r') as f:
                 content = json.loads(f.read())
         elif not content:
-            raise ValueError('Expected File-like or string')
-        print(type(content), content)
+            raise ValueError('Expected File-like object or string')
 
         # Get map cooldown
         try: content['map_cooldown']

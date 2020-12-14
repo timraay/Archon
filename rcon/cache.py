@@ -2,6 +2,8 @@ import re
 from datetime import datetime
 from utils import get_player_input_type
 import difflib
+import os
+from pathlib import Path
 
 import discord
 from discord.ext.commands import BadArgument
@@ -131,6 +133,11 @@ class ServerInstance(MapRotation):
         self.team1 = None
         self.team2 = None
         
+        path = Path(f'rotations/{str(self.id)}.json')
+        if os.path.exists(path):
+            try: self.import_rotation(fp=path)
+            except: pass
+
         self.update()
 
     def select(self, steam_id: int = None, name: str = None, team_id: int = None, squad_id: int = None, player_id: int = None, min_online_time: int = None, max_online_time: int = None):
