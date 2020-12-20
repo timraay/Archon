@@ -145,7 +145,7 @@ Now, I'm taking the same structure as above but rearranging it a bit and adding 
             ],
             "conditions": {
                 "players": {
-                    "max": 70
+                    "max": 80
                 }
             }
         },
@@ -161,17 +161,17 @@ Now, I'm taking the same structure as above but rearranging it a bit and adding 
             "name": "Fallujah RAAS v1",
             "conditions": {
                 "time": {
-                    "max": "13:59"
+                    "max": "17:00"
                 },
                 "players": {
-                    "min": 71
+                    "min": 70
                 }
             }
         }        
     ]
 }
 ```
-First in the pool we see another pool. This pool has a condition that requires a maximum of 70 players online. If that condition is not met no map from this pool will be queued for the next round. Instead, one of the other maps that meet their requirements will be queued. But for now let's pretend that this condition is met. In that case, we have two layers of Gorodok: RAAS and Skirmish. However, Skirmish has a condition that only allows a max of 20 players. So if we have 40 players online, only RAAS can be chosen from that pool.
+First in the pool we see another pool. This pool has a condition that requires a maximum of 80 players online. If that condition is not met no map from this pool will be queued for the next round. Instead, one of the other maps that meet their requirements will be queued. But for now let's pretend that this condition is met. In that case, we have two layers of Gorodok: RAAS and Skirmish. However, Skirmish has a condition that only allows a max of 20 players. So if we have 40 players online, only RAAS can be chosen from that pool.
 
 ## What happens when no conditions are met?
 If a pool is selected, but then no item in that pool has its conditions met, that pool is simply ignored, and it will look for other maps and pools. In the below example, normally it would pick a layer of Gorodok, but if the playercount is below 50 Belaya will be chosen.
