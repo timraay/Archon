@@ -207,8 +207,34 @@ class _util(commands.Cog):
         except discord.HTTPException:
             pass
 
-   
-    
+    @commands.command(description="Send a DM to all instance owners", usage="r!dm_all_owners <message>", hidden=True)
+    @commands.is_owner()
+    async def dm_all_owners(self, ctx, *, text: str):
+
+        msg = await ctx.send(text + "\n\nAre you sure you want to send this message?")
+        await msg.add_reaction("✅")
+
+        def check_reaction(reaction, user):
+            return str(reaction.emoji) == "✅" and user == ctx.author and reaction.message == msg
+        try: reaction, user = await self.bot.wait_for('reaction_add', timeout=60, check=check_reaction)
+        except: await msg.clear_reactions()
+        else:
+            await msg.delete()
+
+            import sqlite3
+            db = sqlite3.connect('instances.db')
+            cur = db.cursor()
+            cur.execute('SELECT DISTINCT owner_id FROM instances')
+            owner_ids = [owner_id[0] for owner_id in cur.fetchall()]
+            for owner_id in owner_ids:
+                try:
+                    user = self.bot.get_user(owner_id)
+                    await user.send(text)
+                except Exception as e:
+                    print(e)
+                    pass
+            await ctx.send("DMs sent")
+
 
 
 def setup(bot):

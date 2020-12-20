@@ -97,6 +97,20 @@ def add_instance(name: str, address: str, port: int, password: str, owner_id: in
 
     return Instance(instance_id)
 
+def edit_instance(inst_id: int, name: str, address: str, port: int, password: str, game: str):
+    # Look for already existing instances that use this address.
+    cur.execute('SELECT * FROM instances WHERE address = ? AND instance_id != ?', (address, inst_id))
+    if cur.fetchone():
+        raise commands.BadArgument("A different server with this address has already been registered")
+
+    # Now we have all parameters we can edit the instance in the database.
+    inst = Instance(inst_id)
+    inst.set_credentials(address, port, password)
+    inst.set_name(name)
+    inst.set_game(game)
+    
+    return inst
+
 def get_perms(user_id: int, guild_id: int, instance_id: int, is_dict=True):
     perms_int = 0
     
@@ -282,6 +296,9 @@ class Instance:
     def set_game(self, value):
         self._set_db_value("game", value)
         self.game = value
+    def set_name(self, value):
+        self._set_db_value("name", value)
+        self.name = value
     def set_default_perms(self, value):
         self._set_db_value("default_perms", value)
         self.default_perms = value
