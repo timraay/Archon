@@ -267,4 +267,4 @@ Using this system, maps used for server seeding can be automatically queued. Bel
 # List of all maps
 [Maps currently in Squad](maps_squad.txt)
 
-[Maps currently in Beyond The Wire](maps_squad.txt)
+[Maps currently in Beyond The Wire](maps_btw.txt)
