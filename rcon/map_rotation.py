@@ -5,9 +5,9 @@ import pytz
 from copy import deepcopy
 
 with open('maps_btw.txt', 'r') as f:
-    MAPS_BTW = [line for line in f.readlines() if line.strip()]
+    MAPS_BTW = [line for line in f.readlines() if line.strip() and not line.startswith('#')]
 with open('maps_squad.txt', 'r') as f:
-    MAPS_SQUAD = [line for line in f.readlines() if line.strip()]
+    MAPS_SQUAD = [line for line in f.readlines() if line.strip() and not line.startswith('#')]
 
 
 
@@ -15,7 +15,9 @@ class MapRotation:
     def import_rotation(self, fp=None, content=None):
         if fp:
             with open(fp, 'r') as f:
-                content = json.loads(f.read())
+                try: content = json.loads(f.read())
+                except json.JSONDecodeError as e:
+                    raise MapRotationError("Invalid format: %s" % str(e))
         elif not content:
             raise ValueError('Expected File-like object or string')
 
@@ -25,7 +27,10 @@ class MapRotation:
         else: self.map_cooldown = content['map_cooldown'] if content['map_cooldown'] > 0 else 1
 
         # Get maps
-        self.map_rotation = Pool(content['maps'])
+        try: self.map_rotation = Pool(content['maps'])
+        except Exception as e:
+            if isinstance(e, MapRotationError): raise e
+            else: raise MapRotationError('An unexpected exception occured: %s: %s' % (type(e).__name__, e))
 
         # Set current and upcoming map
         self.cooldowns = {str(self.current_map): self.map_cooldown}
@@ -41,10 +46,14 @@ class MapRotation:
         weights = [entry.weight for entry in all_entries]
         total_weight = sum(weights)
         probabilities = [weight / total_weight for weight in weights]
+        '''
         for i in range(len(weights)):
             print(probabilities[i], weights[i], all_entries[i].name, [cond.type for cond in all_entries[i].conditions])
+        '''
 
-        draw = choice(all_entries, p=probabilities)
+        try: draw = choice(all_entries, p=probabilities)
+        except ValueError: draw = None
+
         return draw
 
     def _decrease_cooldown(self):
@@ -55,9 +64,10 @@ class MapRotation:
     def map_changed(self, new_map):
         self._decrease_cooldown()
         self.cooldowns[str(new_map)] = self.map_cooldown
-        if str(new_map) == str(self.next_map) or not self.next_map.validate(len(self.players)):
+        if str(new_map) == str(self.next_map) or (self.next_map and not self.next_map.validate(len(self.players))):
             self.next_map = self._get_next_map()
-            self.rcon.set_next_map(self.next_map)
+            if self.next_map:
+                self.rcon.set_next_map(self.next_map)
 
         return self.next_map
         
@@ -181,11 +191,3 @@ class Condition:
 class MapRotationError(Exception):
     """Base exception for map rotations"""
     pass
-
-
-'''
-if __name__ == '__main__':
-    from pathlib import Path
-    rotation = MapRotation(Path("./map_rot_example.json"))
-    print("draw:", rotation._get_next_map().name)
-'''

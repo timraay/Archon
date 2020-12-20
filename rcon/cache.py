@@ -28,7 +28,7 @@ SHORT_TEAM_NAMES = {
     "American Expeditionary Force": "AEF",
 
     "British Army": "BA",
-    "Canadian Army": "CA",
+    "Canadian Army": "CAF",
     "Middle Eastern Alliance": "MEA",
     "Russian Ground Forces": "RGF",
     "United States Army": "USA",
@@ -295,9 +295,10 @@ class ServerInstance(MapRotation):
         if self.current_map != current_map: self.current_map = current_map
         if self.next_map != next_map: self.next_map = next_map
 
-        if not self.next_map.validate():
+        if self.next_map and not self.next_map.validate():
             self.next_map = self._get_next_map()
-            self.rcon.set_next_map(str(self.next_map))
+            if self.next_map:
+                self.rcon.set_next_map(str(self.next_map))
         
     def _parse_squads(self):
         res = self.rcon.list_squads()
