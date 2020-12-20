@@ -1,0 +1,48 @@
+{
+  "map_cooldown": 2,
+  "maps": [
+    "Zonnebeke Frontlines",
+    "Zonnebeke Assault",
+    {
+      "name": "Frise Frontlines",
+      "weight": 2
+    },
+    {
+      "pool": [
+        "Frise Assault v1",
+        {
+          "name": "Frise Assault v2",
+          "weight": 2
+        }
+      ],
+      "weight": 4,
+      "conditions": {
+        "players": {
+          "min": 40
+        }
+      }
+    },
+    {
+      "name": "Ansoncourt Frontlines",
+      "conditions": {
+        "players": {
+          "min": 50
+        }
+      }
+    },
+    {
+      "name": "Ansoncourt Assault",
+      "conditions": {
+        "players": {
+          "min": 40,
+          "max": 80
+        },
+        "time": {
+          "timezone": "CET",
+          "min": "14:00",
+          "max": "21:30"
+        }
+      }
+    }
+  ]
+}

@@ -11,6 +11,7 @@ config = Config()
 
 from rcon.commands import RconCommandError
 from rcon.cache import CacheNotFound, ConnectionLost
+from rcon.map_rotation import MapRotationError
 
 def convert_time(seconds):
     sec = timedelta(seconds=seconds)
@@ -79,6 +80,8 @@ class _events(commands.Cog):
             await ctx.send(f"{error_emoji} Connection to the server was lost! Try reconnecting using `r!inst reconnect`\n`{str(error)}`.")
         elif isinstance(error, CacheNotFound):
             await ctx.send(f"{error_emoji} This instance was shut down! Try reconnecting using `r!inst reconnect`.")
+        elif isinstance(error, MapRotationError):
+            await ctx.send(f"{error_emoji} Failed to import map rotation!\n`{str(error)}`")
         else:
             await ctx.send(f"{error_emoji} Oops, something went wrong!\n`{str(error)}`")
 

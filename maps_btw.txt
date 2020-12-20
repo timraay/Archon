@@ -1,0 +1,19 @@
+# All Beyond The Wire maps and layers as of v0.8
+
+Zonnebeke Frontlines
+Zonnebeke Assault
+
+Frise Frontlines
+Frise Assault
+Frise Assault v2
+
+Ansoncourt Frontlines
+Ansoncourt Assault
+
+Cantigny Frontlines v1
+Cantigny Frontlines v2
+Cantigny Assault v1
+Cantigny Assault v2
+
+Shooting Range FRvsGER
+Shooting Range USvsGER

@@ -2,6 +2,8 @@ import re
 from datetime import datetime
 from utils import get_player_input_type
 import difflib
+import os
+from pathlib import Path
 
 import discord
 from discord.ext.commands import BadArgument
@@ -10,6 +12,7 @@ from rcon import instances, logs
 from rcon.commands import Rcon
 from rcon.connection import RconAuthError
 from rcon.query import SourceQuery
+from rcon.map_rotation import MapRotation, Map
 
 SQUAD_PLAYER_LIMITS = {
     "Command": 2,
@@ -24,7 +27,7 @@ SHORT_TEAM_NAMES = {
     "French Republic": "FR",
     "American Expeditionary Force": "AEF",
 
-    "British Army": "GB",
+    "British Army": "BAF",
     "Canadian Army": "CAF",
     "Middle Eastern Alliance": "MEA",
     "Russian Ground Forces": "RUS",
@@ -113,11 +116,12 @@ class Cache():
             del self.instances[instance_id]
         instances.Instance(instance_id).delete()
 
-class ServerInstance():
+class ServerInstance(MapRotation):
     def __init__(self, instance_id, rcon):
         self.id = instance_id
         self.rcon = rcon
 
+        self.map_rotation = None
         self.current_map = None
         self.next_map = None
         self.last_map_change = None
@@ -129,6 +133,11 @@ class ServerInstance():
         self.team1 = None
         self.team2 = None
         
+        path = Path(f'rotations/{str(self.id)}.json')
+        if os.path.exists(path):
+            try: self.import_rotation(fp=path)
+            except: pass
+
         self.update()
 
     def select(self, steam_id: int = None, name: str = None, team_id: int = None, squad_id: int = None, player_id: int = None, min_online_time: int = None, max_online_time: int = None):
@@ -256,12 +265,12 @@ class ServerInstance():
 
         # Try to read the current map
         try:
-            current_map = re.search(r"Current map is (.+),", res).group(1)
+            current_map = Map(re.search(r"Current map is (.+),", res).group(1))
         except:
             current_map = self.current_map
         # Try to read the upcoming map
         try:
-            next_map = re.search(r"Next map is (.+)", res).group(1)
+            next_map = Map(re.search(r"Next map is (.+)", res).group(1))
         except:
             next_map = self.next_map
 
@@ -272,7 +281,6 @@ class ServerInstance():
 
         if self.current_map and current_map != self.current_map: # Map has changed
             self.is_transitioning = True
-            time = datetime.now().strftime("%H:%M")
             message = f"Map changed from {self.current_map} to {current_map}."
             if self.last_map_change:
                 message += f" The match lasted {str(int((datetime.now() - self.last_map_change).total_seconds() / 60))} minutes."
@@ -280,9 +288,17 @@ class ServerInstance():
                 message += " Match duration is unknown."
             logs.ServerLogs(self.id).add('match', message)
             self.last_map_change = datetime.now()
+
+            if self.map_rotation:
+                next_map = self.map_changed(current_map)
         
-        self.current_map = current_map
-        self.next_map = next_map
+        if self.current_map != current_map: self.current_map = current_map
+        if self.next_map != next_map: self.next_map = next_map
+
+        if self.next_map and not self.next_map.validate():
+            self.next_map = self._get_next_map()
+            if self.next_map:
+                self.rcon.set_next_map(str(self.next_map))
         
     def _parse_squads(self):
         res = self.rcon.list_squads()
