@@ -26,7 +26,7 @@ Custom rotations have to be written in JSON. Furthermore, the `.json` extension 
 <br> ┣ 📜int **map_cooldown**: How many other maps before a map can be queued again. Defaults to 1.
 <br> ┗ 📂**maps**: An array of maps and/or pools
 <br>   ┣ 📜The name of the map
-<br>   ┣ 📦**map**:
+<br>   ┣ 📦A map
 <br>   ┃ ┣ 📜str **name**: The name of the map
 <br>   ┃ ┣ 📜int **weight**: The weight applied to this map when selecting a map. Defaults to 1.
 <br>   ┃ ┗ 📦**conditions**: A list of conditions
