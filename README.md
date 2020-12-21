@@ -1,8 +1,8 @@
-# Archon: Connecting your Squad/BTW servers with Discord
+# Archon: Connecting your Squad, PS and BTW servers with Discord
 
 <img align="right" width="250" height="250" src="images/icon.png">
 
-Archon is a Discord bot made by timraay aka. Abusify that allows you to view and moderate your Squad or Beyond The Wire server through Discord with simple, yet powerful commands.
+Archon is a Discord bot made by timraay/Abusify that allows you to view and moderate your Squad, Post Scriptum or Beyond The Wire server through Discord with simple, yet powerful commands.
 
 ### License
 Archon may be used by anyone under a MIT license. In short, you can obtain a copy of the code and modify it, but you can't claim you made it. It is also important to note that, if something *may* happen, I can not be held responsible for the consequences.
@@ -29,12 +29,11 @@ Archon uses two types of permissions. Guild permissions and user permissions. Ea
 
 ## What's to come?
 - [ ] Advanced graphs and stats
-- [ ] Log channels for more than just chat
-- [ ] Advanced map rotations
-- [ ] Automatic broadcasts
-- [ ] Server Seeding Profiles
+- [x] Log channels for more than just chat
+- [x] Advanced map rotations
+- [x] Server Seeding Profiles
 - [ ] Steam API integration
-- [ ] Instances rework
+- [ ] Further instance improvements
 
 ## Images
 
