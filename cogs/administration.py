@@ -22,7 +22,8 @@ class administration(commands.Cog):
     @commands.command(description="Request a command through RCON", usage="r!execute <cmd>", aliases=["exec"], hidden=False)
     @check_perms(administration=True)
     async def execute(self, ctx, *, cmd):
-        res = self.bot.cache.instance(ctx.author.id, ctx.guild.id).rcon.exec_command(cmd)
+        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        res = inst.rcon.exec_command(cmd)
         res = literal_eval(res)
         if not res: # An empty list was received
             res = "Empty response received"
@@ -31,7 +32,7 @@ class administration(commands.Cog):
             if len(res) > 1018: # too big to be sent in one embed field
                 res = res[:1015] + "..."
 
-        embed = discord.Embed(title="Command executed")
+        embed = base_embed(inst.id, title="Command executed")
         embed.add_field(name="Request", value=f"`{cmd}`", inline=False)
         embed.add_field(name="Response", value=f"```{res}```")
         await ctx.send(embed=embed)
@@ -49,9 +50,10 @@ class administration(commands.Cog):
     @commands.command(description="Set or remove a server password", usage="r!password [password]", aliases=["set_password"])
     @check_perms(administration=True)
     async def password(self, ctx, password: str = ""):
-        res = self.bot.cache.instance(ctx.author.id, ctx.guild.id).rcon.set_password(password)
+        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        res = inst.rcon.set_password(password)
 
-        embed = discord.Embed(title="Password updated", description=res)
+        embed = base_embed(inst.id, title="Password updated", description=res)
         await ctx.send(embed=embed)
 
     @commands.command(description="Set the clock speed on the server", usage="r!slomo <percentage>", aliases=["clockspeed", "clock_speed"])
@@ -62,9 +64,11 @@ class administration(commands.Cog):
             else: percentage = float(percentage)
         except ValueError:
             raise commands.BadArgument('%s needs to be a percentage' % percentage)
-        res = self.bot.cache.instance(ctx.author.id, ctx.guild.id).rcon.set_clockspeed(percentage)
 
-        embed = discord.Embed(title="Server clockspeed adjusted", description=res)
+        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        res = inst.rcon.set_clockspeed(percentage)
+
+        embed = base_embed(inst.id, title="Server clockspeed adjusted", description=res)
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, description="Enable or disable a custom map rotation", usage="r!rotation [subcommand]", aliases=["map_rotation", "rotation"])
