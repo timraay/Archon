@@ -254,16 +254,16 @@ class instances(commands.Cog):
             return embed
 
         async def ask_game():
-            embed = setup_embed("What game is your server for, Squad or BTW?")
+            embed = setup_embed("What game is your server for, Squad, PS or BTW?")
             msg = await ctx.author.send(embed=embed)
             def check(message):
                 return message.channel == msg.channel and message.author == ctx.author
             answer = ""
-            while answer not in ['squad', 'btw']:
+            while answer not in ['squad', 'ps', 'btw']:
                 answer = await self.bot.wait_for('message', check=check, timeout=120.0)
                 answer = answer.content.lower()
-                if answer not in ['squad', 'btw']:
-                    await ctx.author.send(f'Send either "Squad" or "BTW", not "{answer}"')
+                if answer not in ['squad', 'ps', 'btw']:
+                    await ctx.author.send(f'Send either "Squad", "PS" or "BTW", not "{answer}"')
             return answer
         async def ask_address_and_port():
             async def ask_address():

@@ -54,6 +54,18 @@ class administration(commands.Cog):
         embed = discord.Embed(title="Password updated", description=res)
         await ctx.send(embed=embed)
 
+    @commands.command(description="Set the clock speed on the server", usage="r!slomo <percentage>", aliases=["clockspeed", "clock_speed"])
+    @check_perms(administration=True)
+    async def slomo(self, ctx, percentage: str):
+        try:
+            if percentage.endswith("%"): percentage = float(percentage[:-1]) / 100
+            else: percentage = float(percentage)
+        except ValueError:
+            raise commands.BadArgument('%s needs to be a percentage' % percentage)
+        res = self.bot.cache.instance(ctx.author.id, ctx.guild.id).rcon.set_clockspeed(percentage)
+
+        embed = discord.Embed(title="Server clockspeed adjusted", description=res)
+        await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, description="Enable or disable a custom map rotation", usage="r!rotation [subcommand]", aliases=["map_rotation", "rotation"])
     @check_perms(administration=True)

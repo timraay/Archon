@@ -7,6 +7,7 @@ from rcon.instances import Instance, has_perms
 
 GAME_IMAGES = {
     "squad": "https://media.discordapp.net/attachments/729998051288285256/765669813338374144/unknown.png",
+    "ps": "https://media.discordapp.net/attachments/779050069252243477/790620643958718504/PostScriptum.png",
     "btw": "https://media.discordapp.net/attachments/768095907102720051/772495252850212884/2Q.png"
 }
 

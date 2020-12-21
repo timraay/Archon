@@ -92,9 +92,9 @@ class moderation(commands.Cog):
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} broadcasted "{message}"')
 
 
-    @commands.command(description="Demote a commander (Squad only)", usage="r!demote_commander (name or id|team id) [reason]")
+    @commands.command(description="Demote a commander (Squad/PS only)", usage="r!demote_commander (name or id|team id) [reason]")
     @check_perms(moderation=True)
-    @is_game(game="squad")
+    @is_game(game=["squad", "ps"])
     async def demote_commander(self, ctx, name_or_id: str, *, reason: str = None):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
         player = inst.get_player(name_or_id)

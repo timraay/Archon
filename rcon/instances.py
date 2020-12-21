@@ -229,12 +229,13 @@ def check_perms(public=None, logs=None, moderation=None, administration=None, in
                 await ctx.send(":no_entry_sign: You don't have the required permissions to execute this command!")
         return is_ok
     return commands.check(predicate)
-def is_game(game: str):
+def is_game(game):
     async def predicate(ctx):
         instance = Instance(ctx.bot.cache._get_selected_instance(ctx.author.id, ctx.guild.id))
-        if instance.game != game:
+        if instance.game not in game:
             await ctx.send(f":no_entry_sign: Invalid instance!\n`This command only works for %s servers`" % game.upper())
-        return instance.game == game
+            return False
+        return True
     return commands.check(predicate)
 def is_owner():
     async def predicate(ctx):

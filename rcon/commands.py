@@ -122,6 +122,10 @@ class Rcon(RconConnection):
         res = self.exec_command(f"AdminSetServerPassword {password}")
         res = self._res_to_str(res)
         return res
+    def set_clockspeed(self, percentage: float):
+        res = self.exec_command(f"AdminSlomo {str(percentage)}")
+        res = self._res_to_str(res)
+        return res
 
 
 class RconCommandError(RconError):
