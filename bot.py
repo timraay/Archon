@@ -7,6 +7,9 @@ import random
 from random import randint
 import os
 from pathlib import Path
+import re
+
+from rcon.instances import get_available_instances
 
 from utils import Config
 config = Config()
@@ -14,7 +17,25 @@ config = Config()
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(intents=intents, command_prefix=("r!", "R!"), case_insensitive=True)
+async def command_prefix(bot, msg):
+    res = re.search(r"\A[rR](\d*)!", msg.content)
+    try:
+        prefix = res.group()
+        inst_id = res.groups()[0]
+    except:
+        return ("r!", "R!")
+
+    if inst_id:
+        inst_id = int(inst_id)
+        instances = get_available_instances(msg.author.id, msg.guild.id)
+        try: inst = [inst for i, (inst, perms) in enumerate(instances) if i+1 == inst_id][0]
+        except IndexError:
+            await msg.channel.send(":no_entry_sign: Invalid command prefix!\n`No instance found with ID %s`" % inst_id)
+            return ("r!", "R!")
+        bot.cache.selected_instance[msg.author.id] = inst.id
+    return prefix
+
+bot = commands.Bot(intents=intents, command_prefix=command_prefix, case_insensitive=True)
 bot.remove_command('help')
 
 from rcon.cache import Cache
