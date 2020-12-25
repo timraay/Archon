@@ -14,24 +14,32 @@ The first table in instances.db will be named "instances" with a row for each in
 Each of these rows will hold the name, address, port, password and owner_id of that instance.
 
 instances
-    - instance_id       # The unique ID of this instance
-    - name              # The name of the instance
-    - address           # The address used to connect to the instance
-    - port              # The port used to connect to the instance
-    - password          # The password used to connect to the instance
-    - owner_id          # The discord user ID of the owner of the instance
-    - default_perms     # The default permissions for each user
+    - instance_id           # The unique ID of this instance
+    - name                  # The name of the instance
+    - address               # The address used to connect to the instance
+    - port                  # The port used to connect to the instance
+    - password              # The password used to connect to the instance
+    - owner_id              # The discord user ID of the owner of the instance
+    - default_perms         # The default permissions for each user
+    - uses_custom_rotation  # Whether a custom rotation is used
 
 
 The second table in instances.db will be named "config" with a row for each instance.
 Each of these rows will hold configurations for this instance for all sorts of features.
 
 config
-    - instance_id               # The unique ID of this instance
-    - guild_id                  # The guild to apply to default perms and other features (default: guild of creation)
-    - chat_trigger_words        # A comma-separated list of keywords to trigger alerts (default: !admin)
-    - chat_trigger_channel_id   # The channel to send trigger alerts in
-    This desperately needs an update but I can't be bothered to.
+    - instance_id                   # The unique ID of this instance
+    - guild_id                      # The guild to apply to default perms and other features (default: guild of creation)
+    - chat_trigger_words            # A comma-separated list of keywords to trigger alerts (default: !admin)
+    - chat_trigger_channel_id       # The channel to send trigger alerts in
+    - chat_trigger_mentions         # What to mention when an alert is sent
+    - chat_trigger_confirmation     # If and what confirmation message should be sent to the reporting player
+    - chat_trigger_cooldown         # If and what the cooldown should be inbetween alert per user
+    - chat_trigger_require_reason   # Whether the alert should require a reason
+    - channel_log_chat              # The channel to send chat logs to
+    - channel_log_joins             # The channel to send join logs to
+    - channel_log_match             # The channel to send match logs to
+    - channel_log_rcon              # The channel to send rcon logs to
 
 
 The third table in instances.db will be named "permissions" with a row for each assigned group of permissions.
@@ -67,13 +75,13 @@ If you sum the ints of the permissions you want to assign you get the permission
 
 db = sqlite3.connect('instances.db')
 cur = db.cursor()
-cur.execute('CREATE TABLE IF NOT EXISTS instances(instance_id INT NOT NULL, name TEXT, address TEXT, port INT, password TEXT, owner_id INT, game TEXT, default_perms INT, PRIMARY KEY (instance_id))')
+cur.execute('CREATE TABLE IF NOT EXISTS instances(instance_id INT NOT NULL, name TEXT, address TEXT, port INT, password TEXT, owner_id INT, game TEXT, default_perms INT, uses_custom_rotation INT, PRIMARY KEY (instance_id))')
 cur.execute('CREATE TABLE IF NOT EXISTS config(instance_id INT, guild_id INT, chat_trigger_words TEXT, chat_trigger_channel_id INT, chat_trigger_mentions TEXT, chat_trigger_confirmation TEXT, chat_trigger_cooldown INT, chat_trigger_require_reason INT, chat_log_channel_id INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
 cur.execute('CREATE TABLE IF NOT EXISTS permissions(instance_id INT, user_id INT, perms INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
 db.commit()
 
 
-def add_instance(name: str, address: str, port: int, password: str, owner_id: int, game: str, default_perms: int = 0):
+def add_instance(name: str, address: str, port: int, password: str, owner_id: int, game: str, default_perms: int = 0, uses_custom_rotation: int = 0):
     # Look for already existing instances that use this address.
     cur.execute('SELECT * FROM instances WHERE address = ?', (address,))
     if cur.fetchone():
@@ -90,7 +98,7 @@ def add_instance(name: str, address: str, port: int, password: str, owner_id: in
     instance_id = cur.fetchone()[0]
     instance_id = instance_id + 1 if isinstance(instance_id, int) else 0
     # Now we have all parameters we can add the instance to the database.
-    cur.execute('INSERT INTO instances VALUES (?,?,?,?,?,?,?,?)', (instance_id, name, address, port, password, owner_id, game, default_perms))
+    cur.execute('INSERT INTO instances VALUES (?,?,?,?,?,?,?,?,?)', (instance_id, name, address, port, password, owner_id, game, default_perms, uses_custom_rotation))
     cur.execute(f'INSERT INTO permissions VALUES (?,?,?)', (instance_id, owner_id, 31))
     _insert_config_row(instance_id)
     db.commit()
@@ -253,7 +261,7 @@ class Instance:
         res = cur.fetchone()
         if not res:
             raise UnknownInstanceError("No instance found with ID %s" % id)
-        self.id, self.name, self.address, self.port, self.password, self.owner_id, self.game, self.default_perms = res
+        self.id, self.name, self.address, self.port, self.password, self.owner_id, self.game, self.default_perms, self.uses_custom_rotation = res
 
         self.config = {}
         cur.execute('SELECT * FROM config WHERE instance_id = ?', (id,))
@@ -302,6 +310,9 @@ class Instance:
         self.name = value
     def set_default_perms(self, value):
         self._set_db_value("default_perms", value)
+        self.default_perms = value
+    def set_uses_custom_rotation(self, value):
+        self._set_db_value("uses_custom_rotation", value)
         self.default_perms = value
 
     def store_config(self):

@@ -122,6 +122,8 @@ class administration(commands.Cog):
         with open(Path(f'rotations/{str(inst.id)}.json'), 'w+') as f:
             f.write(json.dumps(content, indent=2))
 
+        Instance(inst.id).set_uses_custom_rotation(1)
+
         embed = base_embed(inst.id, title="Uploaded and enabled Custom Map Rotation", color=discord.Color.green())
         embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"
         try: maps = sorted(set([str(entry) for entry in inst.map_rotation.get_entries()]))
@@ -144,6 +146,7 @@ class administration(commands.Cog):
             return
         
         inst.import_rotation(fp=path)
+        Instance(inst.id).set_uses_custom_rotation(1)
 
         embed = base_embed(inst.id, title="Enabled Custom Map Rotation", color=discord.Color.green())
         embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"
@@ -163,6 +166,7 @@ class administration(commands.Cog):
             return
         
         inst.map_rotation = None
+        Instance(inst.id).set_uses_custom_rotation(0)
 
         embed = base_embed(inst.id, title="Disabled Custom Map Rotation", color=discord.Color.red())
         embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"

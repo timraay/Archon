@@ -136,7 +136,7 @@ class ServerInstance(MapRotation):
         self.update()
 
         path = Path(f'rotations/{str(self.id)}.json')
-        if os.path.exists(path):
+        if os.path.exists(path) and instances.Instance(self.id).uses_custom_rotation:
             try: self.import_rotation(fp=path)
             except: pass
 
