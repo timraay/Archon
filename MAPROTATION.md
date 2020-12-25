@@ -23,7 +23,7 @@ However, custom rotations have to be written in a specific format, which gets a 
 Custom rotations have to be written in JSON. Furthermore, the `.json` extension is the only extension the bot will accept.
 
 📦**The root tag**
-<br> ┣ 📜int **map_cooldown**: How many other maps before a map can be queued again. Defaults to 1.
+<br> ┣ 📜int **map_cooldown**: Global cooldown of how many other maps before a map can be queued again. Defaults to 1.
 <br> ┗ 📂**maps**: An array of maps and/or pools
 <br>   ┣ 📜The name of the map
 <br>   ┣ 📦A map
@@ -33,10 +33,11 @@ Custom rotations have to be written in JSON. Furthermore, the `.json` extension 
 <br>   ┃   ┣ 📦**players**: How many players should be online
 <br>   ┃   ┃ ┣ 📜int **min**: The minimum amount. Defaults to 0.
 <br>   ┃   ┃ ┗ 📜int **max**: The maximum amount. Defaults to 100.
-<br>   ┃   ┗ 📦**time**: What time of the day it should be
-<br>   ┃     ┣ 📜str **min**: The minimum time, formatted as HH:MM. Defaults to 00:00.
-<br>   ┃     ┣ 📜str **max**: The maximum time, formatted as HH:MM. Defaults to 24:00.
-<br>   ┃     ┗ 📜str **timezone**: The timezone that is used. Can be a city as well. Defaults to UTC.
+<br>   ┃   ┣ 📦**time**: What time of the day it should be
+<br>   ┃   ┃ ┣ 📜int **min**: The minimum time, formatted as HH:MM. Defaults to 00:00.
+<br>   ┃   ┃ ┣ 📜int **max**: The maximum time, formatted as HH:MM. Defaults to 24:00.
+<br>   ┃   ┃ ┗ 📜str **timezone**: The timezone that is used. Can be a city as well. Defaults to UTC.
+<br>   ┃   ┗ 📜int **cooldown**: Cooldown overwrite of how many other maps before this map can be queued again.
 <br>   ┣ 📂An array of maps and/or more pools
 <br>   ┗ 📦A pool of maps and/or more pools
 <br>     ┣ 📂**pool**: An array of maps and/or more pools
@@ -46,10 +47,11 @@ Custom rotations have to be written in JSON. Furthermore, the `.json` extension 
 <br>       ┣ 📦**players**: How many players should be online
 <br>       ┃ ┣ 📜int **min**: The minimum amount. Defaults to 0.
 <br>       ┃ ┗ 📜int **max**: The maximum amount. Defaults to 100.
-<br>       ┗ 📦**time**: What time of the day it should be
-<br>         ┣ 📜int **min**: The minimum time, formatted as HH:MM. Defaults to 00:00.
-<br>         ┣ 📜int **max**: The maximum time, formatted as HH:MM. Defaults to 24:00.
-<br>         ┗ 📜str **timezone**: The timezone that is used. Can be a city as well. Defaults to UTC.
+<br>       ┣ 📦**time**: What time of the day it should be
+<br>       ┃ ┣ 📜int **min**: The minimum time, formatted as HH:MM. Defaults to 00:00.
+<br>       ┃ ┣ 📜int **max**: The maximum time, formatted as HH:MM. Defaults to 24:00.
+<br>       ┃ ┗ 📜str **timezone**: The timezone that is used. Can be a city as well. Defaults to UTC.
+<br>       ┗ 📜int **cooldown**: Cooldown overwrite of how many other maps before a map from this pool can be queued again.
 
 Simply put, a custom rotation is built out of a pool of maps and/or more pools. You can have as many pools as you want, and you can mention the same map several times throughout your custom rotation.
 
@@ -213,9 +215,11 @@ If a pool is selected, but then no item in that pool has its conditions met, tha
 However, if the time is below 2 PM, the conditions applied to Belaya won't be met either. In that case there is no other map or pool to fall back to, and no map will be queued by RCON. Note that when a map invalidates after it was first queued and there is no other map to fall back to that map will still remain queued.
 
 ## Map Cooldown
-Every time a map is played a cooldown is applied. This value is nothing more than the amount of maps that have to be inbetween the same map being queued again. So if I have a cooldown of 3, the map needs to be changed 3 times first before it can be queued again, since every map change the value is decreased by 1. Since map change has to be detected, the default and minimum map cooldown is 1.
+The module keeps track of how many rounds ago a map was last played. This can be used to ensure the same map is not queued too soon after it is first queued. But unlike the other two conditions, this one can be applied in two different ways.
 
-In the below example, 4 maps are in the rotation. The cooldown completely ignores pools and duplicate maps, meaning that if Gorodok RAAS v1 has a cooldown, Gorodok RAAS v2 can still be selected. Following that same logic, if I'd have Gorodok RAAS v1 elsewhere in my custom rotation as well, that still couldn't be selected.
+Since the tool can only detect match ends by map change, there has to be a global cooldown of at least 1, which is the default value. You can adjust this value however, by adding the `map_cooldown` key directly to the root tag, as can be seen in the below example.
+
+Now let's talk about its behavior a little bit more. There are 4 maps are in the rotation. The cooldown completely ignores pools and duplicate maps, meaning that if Gorodok RAAS v1 has a cooldown, Gorodok RAAS v2 can still be selected. Also, if I'd have Gorodok RAAS v1 elsewhere in my custom rotation as well, that still couldn't be selected if it was still under cooldown.
 ```json
 {
     "map_cooldown": 3,
@@ -229,9 +233,33 @@ In the below example, 4 maps are in the rotation. The cooldown completely ignore
     ]
 }
 ```
+I still haven't mentioned the second method to apply this condition, which is similar to all other conditions. I like to call this one the "cooldown overwrite", as it is not required but always overwrites the global cooldown when defined. In the next example we can see we have a global cooldown of 3, but for the final map we have a cooldown of 2 for Gorodok v1 and a cooldown of 1 for v2.
+```json
+{
+    "map_cooldown": 3,
+    "maps": [
+        {
+            "pool": [
+                "Gorodok RAAS v1",
+                {
+                    "name": "Gorodok RAAS v2",
+                    "conditions": {
+                        "cooldown": 1
+                    }
+                }
+            ],
+            "conditions": {
+                "cooldown": 2
+            }
+        },
+        "Belaya RAAS v1",
+        "Fallujah RAAS v1"
+    ]
+}
+```
 
 ## Server seeding maps
-Using this system, maps used for server seeding can be automatically queued. Below is an example of how that could work.
+Using this system, maps used for server seeding can be automatically queued. Below is an example of how that could work. This is just a small rotation. Especially for larger rotations it is recommended to mess around with cooldowns as well.
 ```json
 {
     "map_cooldown": 2,

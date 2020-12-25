@@ -33,14 +33,15 @@ class MapRotation:
             else: raise MapRotationError('An unexpected exception occured: %s: %s' % (type(e).__name__, e))
 
         # Set current and upcoming map
-        self.cooldowns = {str(self.current_map): self.map_cooldown}
+        self.cooldowns = {str(self.current_map): 0}
         self.current_map = Map(self.current_map)
         self.next_map = self.map_changed(self.current_map)
 
     def _get_next_map(self):
         all_entries = self.map_rotation.get_entries()
         for entry in all_entries[::-1]:
-            if not entry.validate(len(self.players)) or entry.name in self.cooldowns.keys() or entry.name == str(self.current_map):
+            cooldown = entry.cooldown if entry.cooldown else self.map_cooldown
+            if not entry.validate(len(self.players)) or (entry.name in self.cooldowns.keys() and self.cooldowns[entry.name] < cooldown) or entry.name == str(self.current_map):
                 all_entries.remove(entry)
         
         weights = [entry.weight for entry in all_entries]
@@ -58,12 +59,11 @@ class MapRotation:
 
     def _decrease_cooldown(self):
         for i in list(self.cooldowns):
-            self.cooldowns[i] -= 1
-            if not self.cooldowns[i]: self.cooldowns.pop(i)
+            self.cooldowns[i] += 1
 
     def map_changed(self, new_map):
         self._decrease_cooldown()
-        self.cooldowns[str(new_map)] = self.map_cooldown
+        self.cooldowns[str(new_map)] = 0
         if str(new_map) == str(self.next_map) or (self.next_map and not self.next_map.validate(len(self.players))):
             self.next_map = self._get_next_map()
             if self.next_map:
@@ -74,9 +74,11 @@ class MapRotation:
 
 
 class Pool:
-    def __init__(self, pool, weight = 1, conditions = {}):
+    def __init__(self, pool, weight = 1.0, conditions = {}):
         self.weight = weight
         self.conditions = [Condition(k, v) for k, v in conditions.items()]
+        try: self.cooldown = [c.value for c in self.conditions if c.type == 'cooldown'][0]
+        except IndexError: self.cooldown = 0
 
         self.pool = []
         for entry in pool:
@@ -88,12 +90,12 @@ class Pool:
                 keys = entry.keys()
                 if 'name' in keys:
                     name = str(entry['name'])
-                    weight = int(entry['weight']) if 'weight' in keys else 1
+                    weight = float(entry['weight']) if 'weight' in keys else 1.0
                     conditions = entry['conditions'] if 'conditions' in keys else {}
                     self.pool.append(Map(name, weight, conditions))
                 elif 'pool' in keys:
                     pool = entry['pool']
-                    weight = int(entry['weight']) if 'weight' in keys else 1
+                    weight = float(entry['weight']) if 'weight' in keys else 1.0
                     conditions = entry['conditions'] if 'conditions' in keys else {}
                     self.pool.append(Pool(pool, weight, conditions))
 
@@ -110,6 +112,7 @@ class Pool:
         for i, entry in enumerate(all_entries):
             entry.weight *= (self.weight / total_weight)
             entry.conditions += self.conditions
+            if not entry.cooldown: entry.cooldown = self.cooldown
             all_entries[i] = entry
         return all_entries
 
@@ -120,11 +123,13 @@ class Pool:
         return True
 
 class Map:
-    def __init__(self, name, weight = 1, conditions = {}):
+    def __init__(self, name, weight = 1.0, conditions = {}):
         self.name = str(name)
-        self.weight = weight if weight > 0 else 1
+        self.weight = weight if weight > 0.0 else 1.0
         self.conditions = [Condition(k, v) for k, v in conditions.items()]
-    
+        try: self.cooldown = [c.value for c in self.conditions if c.type == 'cooldown'][0]
+        except IndexError: self.cooldown = 0
+
     def __str__(self):
         return self.name
 
@@ -168,6 +173,10 @@ class Condition:
             try: self.tz = pytz.timezone(arguments['timezone']) if arguments['timezone'] else pytz.utc
             except: raise MapRotationError('Unknown timezone: %s' % arguments['timezone'])
         
+        elif self.type == 'cooldown':
+            if int(arguments) > 0: self.value = int(arguments)
+            else: raise MapRotationError('Invalid condition: %(condition)s requires a value greater than 0')
+        
         else:
             raise MapRotationError('Invalid condition: %(condition)s')
     
@@ -184,6 +193,10 @@ class Condition:
 
             if time >= self.min and time <= self.max: return True
             else: return False
+        elif self.type == 'cooldown':
+            # This is validated elsewhere
+            return True
+
 
 
 

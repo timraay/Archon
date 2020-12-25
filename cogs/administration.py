@@ -88,7 +88,9 @@ class administration(commands.Cog):
                 embed.title += " | Status: Disabled"
             
             try: maps = sorted(set([str(entry) for entry in inst.map_rotation.get_entries()]))
-            except: maps = ["Failed to fetch maps"]
+            except Exception as e:
+                maps = ["Failed to fetch maps"]
+                raise e
             embed.add_field(name="Maps in rotation:", value="\n".join(maps))
 
         else:

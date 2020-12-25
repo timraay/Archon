@@ -27,13 +27,13 @@ SHORT_TEAM_NAMES = {
     "French Republic": "FR",
     "American Expeditionary Force": "AEF",
 
-    "British Army": "BAF",
+    "British Army": "GB",
     "Canadian Army": "CAF",
     "Middle Eastern Alliance": "MEA",
     "Russian Ground Forces": "RUS",
     "United States Army": "US",
     "Insurgent Forces": "INS",
-    "Irregular Militia Forces": "IM"
+    "Irregular Militia Forces": "MIL"
 }
 
 
@@ -132,13 +132,13 @@ class ServerInstance(MapRotation):
 
         self.team1 = None
         self.team2 = None
-        
+
+        self.update()
+
         path = Path(f'rotations/{str(self.id)}.json')
         if os.path.exists(path):
             try: self.import_rotation(fp=path)
             except: pass
-
-        self.update()
 
     def select(self, steam_id: int = None, name: str = None, team_id: int = None, squad_id: int = None, player_id: int = None, min_online_time: int = None, max_online_time: int = None):
         pool = self.players
