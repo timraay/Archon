@@ -111,7 +111,7 @@ class moderation(commands.Cog):
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} demoted commander {player.name} for "{reason}"')
     
-    @commands.command(description="Remove a player from their squad", usage="r!kick_from_squad <player>", aliases=["squad_kick", "squadkick", "remove_from_squad"])
+    @commands.command(description="Remove a player from their squad", usage="r!kick_from_squad <player> [reason]", aliases=["squad_kick", "squadkick", "remove_from_squad"])
     @check_perms(moderation=True)
     async def kick_from_squad(self, ctx, name_or_id: str, *, reason: str = None):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
@@ -129,7 +129,7 @@ class moderation(commands.Cog):
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} squad-kicked {player.name} for "{reason}"')
 
-    @commands.command(description="Force a player to switch team", usage="r!switch_team <player>", aliases=["switch_teams", "change_team", "change_teams"])
+    @commands.command(description="Force a player to switch team", usage="r!switch_team <player> [reason]", aliases=["switch_teams", "change_team", "change_teams"])
     @check_perms(moderation=True)
     async def switch_team(self, ctx, name_or_id: str, *, reason: str = None):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
@@ -145,10 +145,10 @@ class moderation(commands.Cog):
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} team-switched {player.name} for "{reason}"')
 
-    @commands.command(description="Disband a squad", usage="r!disband_squad <team id> <squad id>", aliases=["disband"])
+    @commands.command(description="Disband a squad", usage="r!disband_squad <team id> <squad id> [reason]", aliases=["disband"])
     @check_perms(moderation=True)
     async def disband_squad(self, ctx, team_id: int, squad_id: int, *, reason: str = None):
-        if team_id not in range(1, 2):
+        if team_id not in [1, 2]:
             raise commands.BadArgument('team_id needs to be either 1 or 2')
 
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
