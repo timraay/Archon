@@ -416,6 +416,7 @@ class Squad():
         self.name = name
         self.player_ids = player_ids
         self.locked = locked
+        self.creator = self.player_ids[0]
         """
         self.type = None
         self._possible_types = [key for key in SQUAD_PLAYER_LIMITS.keys()]
