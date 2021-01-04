@@ -174,6 +174,7 @@ class logs(commands.Cog):
                                 self.trigger_cooldowns[player.steam_id] = datetime.now()
                                 description = f"{name}: {discord.utils.escape_markdown(text)}"
                                 embed = base_embed(inst.id, title="New Report", description=description, color=discord.Color.red())
+                                if player: embed.set_footer(text="Team ID: %s • Squad ID: %s • Player ID: %s" % (player.team_id, player.squad_id, player.player_id))
                                 await trigger_channel.send(trigger_mentions, embed=embed)
                                 if config['chat_trigger_confirmation']:
                                     inst.rcon.warn(player.steam_id, config['chat_trigger_confirmation'])
