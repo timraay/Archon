@@ -239,9 +239,10 @@ def check_perms(public=None, logs=None, moderation=None, administration=None, in
     return commands.check(predicate)
 def is_game(game):
     async def predicate(ctx):
+        game = list(game)
         instance = Instance(ctx.bot.cache._get_selected_instance(ctx.author.id, ctx.guild.id))
         if instance.game not in game:
-            await ctx.send(f":no_entry_sign: Invalid instance!\n`This command only works for %s servers`" % game.upper())
+            await ctx.send(f":no_entry_sign: Invalid instance!\n`This command only works for %s servers`" % ", ".join(game).upper())
             return False
         return True
     return commands.check(predicate)

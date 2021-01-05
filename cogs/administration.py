@@ -7,6 +7,7 @@ from pathlib import Path
 
 from rcon.commands import Rcon
 from rcon.instances import check_perms, Instance
+from rcon.map_rotation import MAPS_SQUAD, MAPS_BTW
 
 from utils import Config, base_embed
 config = Config()
@@ -123,12 +124,25 @@ class administration(commands.Cog):
             f.write(json.dumps(content, indent=2))
 
         Instance(inst.id).set_uses_custom_rotation(1)
+        game = Instance(inst.id).game.upper()
+        if game == 'SQUAD': valid_maps = MAPS_SQUAD
+        elif game == 'BTW': valid_maps = MAPS_BTW
+        elif game == 'PS': valid_maps = MAPS_PS
+        else: valid_maps = []
 
         embed = base_embed(inst.id, title="Uploaded and enabled Custom Map Rotation", color=discord.Color.green())
         embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"
-        try: maps = sorted(set([str(entry) for entry in inst.map_rotation.get_entries()]))
+        try:
+            maps = sorted(set([str(entry) for entry in inst.map_rotation.get_entries()]))
+            for m in maps:
+                if m not in valid_maps:
+                    maps[maps.index(m)] += " ⚠️"
+
         except: maps = ["Failed to fetch maps"]
         embed.add_field(name="Maps in rotation:", value="\n".join(maps))
+
+        if " ⚠️" in "\n".join(maps):
+            embed.add_field(name='⚠️ Warning ⚠️', value="Some maps are not recognized and could be invalid. Please verify that the marked layers are correct.")
 
         await ctx.send(embed=embed)
 
