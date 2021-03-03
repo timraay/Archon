@@ -97,10 +97,29 @@ class logs(commands.Cog):
         inst.rcon.clear_player_chat()
 
         # Parse incoming messages
-        # '[ChatAll] [SteamID:12345678901234567] [FP] Clan Member 1 : Hello world! '
+        # '[ChatAll] [SteamID:12345678901234567] [FP] Clan Member 1 : Hello world!'
+        # '[ChatAdmin] ASQKillDeathRuleset : Player S.T.A.L.K.E.R%s Team Killed Player NUKE'
         for message in new_chat_messages:
             raw_data = {}
-            raw_data['channel'], raw_data['steam_id'], raw_data['name'], raw_data['message'] = re.search(r'\[(.+)\] \[SteamID:(\d{17})\] (.*) : (.*)', message).groups()
+            if message.startswith('[ChatAdmin] ASQKillDeathRuleset'):
+                # The message is a logged teamkill
+                p1_name, p2_name = re.search(r'\[ChatAdmin\] ASQKillDeathRuleset : Player (.*)%s Team Killed Player (.*)', message).groups()
+                p1 = inst.get_player(p1_name)
+                p2 = inst.get_player(p2_name)
+                p1_output = f"{p1_name} ({p1.steam_id})" if p1 else p1_name 
+                p2_output = f"{p2_name} ({p2.steam_id})" if p2 else p2_name 
+                
+                message = f"{p1_output} team killed {p2_output}"
+
+                if p1: team = inst.team1.faction_short
+                elif p2: team = inst.team2.faction_short
+                else: team = ''
+                
+                if team: message = f"[{team}] " + message
+                ServerLogs(inst.id).add("teamkill", message)
+                continue
+            else:
+                raw_data['channel'], raw_data['steam_id'], raw_data['name'], raw_data['message'] = re.search(r'\[(.+)\] \[SteamID:(\d{17})\] (.*) : (.*)', message).groups()
 
             player = inst.get_player(int(raw_data['steam_id']))
             if player:

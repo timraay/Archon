@@ -86,5 +86,5 @@ def format_log(log):
 
 
 def delete_old_logs():
-    cur.execute("DELETE FROM logs WHERE timestamp < DATETIME('NOW', '-5 days')")
+    cur.execute("DELETE FROM logs WHERE timestamp < DATETIME('NOW', '-14 days')")
     db.commit()
