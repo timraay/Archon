@@ -113,11 +113,9 @@ class logs(commands.Cog):
                 message = f"{p1_output} team killed {p2_output}"
                 ServerLogs(inst.id).add("teamkill", message)
                 continue
-            elif message.startswith('[SteamID:'):
-                # The message is some generic action we can ignore
-                continue
             else:
-                raw_data['channel'], raw_data['steam_id'], raw_data['name'], raw_data['message'] = re.search(r'\[(.+)\] \[SteamID:(\d{17})\] (.*) : (.*)', message).groups()
+                try: raw_data['channel'], raw_data['steam_id'], raw_data['name'], raw_data['message'] = re.search(r'\[(.+)\] \[SteamID:(\d{17})\] (.*) : (.*)', message).groups()
+                except: continue
 
             player = inst.get_player(int(raw_data['steam_id']))
             if player:
