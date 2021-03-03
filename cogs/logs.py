@@ -24,7 +24,7 @@ class logs(commands.Cog):
         self.last_seen_id = {}
         self.trigger_cooldowns = {}
 
-        #self.check_server.add_exception_type(Exception)
+        self.check_server.add_exception_type(Exception)
         self.check_server.start()
 
 
@@ -99,6 +99,7 @@ class logs(commands.Cog):
         # Parse incoming messages
         # '[ChatAll] [SteamID:12345678901234567] [FP] Clan Member 1 : Hello world!'
         # '[ChatAdmin] ASQKillDeathRuleset : Player S.T.A.L.K.E.R%s Team Killed Player NUKE'
+        # '[SteamID:76561198129591637] (WTH) Dylan has possessed admin camera.'
         for message in new_chat_messages:
             raw_data = {}
             if message.startswith('[ChatAdmin] ASQKillDeathRuleset'):
@@ -111,6 +112,9 @@ class logs(commands.Cog):
 
                 message = f"{p1_output} team killed {p2_output}"
                 ServerLogs(inst.id).add("teamkill", message)
+                continue
+            elif message.startswith('[SteamID:'):
+                # The message is some generic action we can ignore
                 continue
             else:
                 raw_data['channel'], raw_data['steam_id'], raw_data['name'], raw_data['message'] = re.search(r'\[(.+)\] \[SteamID:(\d{17})\] (.*) : (.*)', message).groups()
