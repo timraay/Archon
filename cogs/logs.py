@@ -24,7 +24,7 @@ class logs(commands.Cog):
         self.last_seen_id = {}
         self.trigger_cooldowns = {}
 
-        self.check_server.add_exception_type(Exception)
+        #self.check_server.add_exception_type(Exception)
         self.check_server.start()
 
 
@@ -106,16 +106,10 @@ class logs(commands.Cog):
                 p1_name, p2_name = re.search(r'\[ChatAdmin\] ASQKillDeathRuleset : Player (.*)%s Team Killed Player (.*)', message).groups()
                 p1 = inst.get_player(p1_name)
                 p2 = inst.get_player(p2_name)
-                p1_output = f"{p1_name} ({p1.steam_id})" if p1 else p1_name 
-                p2_output = f"{p2_name} ({p2.steam_id})" if p2 else p2_name 
-                
-                message = f"{p1_output} team killed {p2_output}"
+                p1_output = f"{p1_name} ({p1.steam_id})" if p1 else p1_name
+                p2_output = f"{p2_name} ({p2.steam_id})" if p2 else p2_name
 
-                if p1: team = inst.team1.faction_short
-                elif p2: team = inst.team2.faction_short
-                else: team = ''
-                
-                if team: message = f"[{team}] " + message
+                message = f"{p1_output} team killed {p2_output}"
                 ServerLogs(inst.id).add("teamkill", message)
                 continue
             else:
@@ -244,6 +238,7 @@ class logs(commands.Cog):
                     channel_joins = guild.get_channel(config['channel_log_joins'])
                     channel_match = guild.get_channel(config['channel_log_match'])
                     channel_rcon = guild.get_channel(config['channel_log_rcon'])
+                    channel_teamkills = guild.get_channel(config['channel_log_teamkills'])
 
                     if channel_rcon:
                         default_embed = base_embed(inst.id)
@@ -280,6 +275,16 @@ class logs(commands.Cog):
                             embed.color = discord.Color.from_rgb(255,255,255)
                             embed.title = log['message']
                             embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+                            await channel_match.send(embed=embed)
+                    if channel_teamkills:
+                        default_embed = base_embed(inst.id)
+                        logs = [log for log in new_logs if log['category'] == 'teamkill']
+                        if logs:
+                            embed = default_embed
+                            embed.set_footer(text=f"Recorded at {logs[-1]['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+
+                            embed.color = discord.Color.dark_red()
+                            embed.description = "\n".join([log['message'] for log in logs])
                             await channel_match.send(embed=embed)
 
                 self.last_seen_id[inst.id] = new_max_id

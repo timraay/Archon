@@ -19,6 +19,7 @@ CONFIG_DESC = {
     "chat_log_channel_id": "**Chat Log Channel ID (chat\\_log\\_channel\\_id)**\nThis is the channel ID of the channel to automatically log chat messages to.",
     "joins_log_channel_id": "**Joins Log Channel ID (joins\\_log\\_channel\\_id)**\nThis is the channel ID of the channel to automatically log players joining and leaving to.",
     "rcon_log_channel_id": "**RCON Log Channel ID (rcon\\_log\\_channel\\_id)**\nThis is the channel ID of the channel to automatically log RCON actions to.",
+    "teamkills_log_channel_id": "**Teamkills Log Channel ID (teamkills\\_log\\_channel\\_id)**\nThis is the channel ID of the channel to automatically log teamkills to.",
     "match_log_channel_id": "**Match Log Channel ID (match\\_log\\_channel\\_id)**\nThis is the channel ID of the channel to automatically log match changes to."
 }
 
@@ -78,6 +79,12 @@ CONFIGS = {
         "name": "Match Log Channel",
         "emoji": "🌊",
         "short_desc": "The ID of the channel to log match events in",
+        "long_desc": ""
+    },
+    "channel_log_teamkills": {
+        "name": "Teamkills Log Channel",
+        "emoji": "🕵️‍♂️",
+        "short_desc": "The ID of the channel to log teamkills in",
         "long_desc": ""
     },
     "channel_log_rcon": {

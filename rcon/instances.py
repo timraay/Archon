@@ -40,6 +40,7 @@ config
     - channel_log_joins             # The channel to send join logs to
     - channel_log_match             # The channel to send match logs to
     - channel_log_rcon              # The channel to send rcon logs to
+    - channel_log_teamkills         # The channel to send teamkill logs to
 
 
 The third table in instances.db will be named "permissions" with a row for each assigned group of permissions.
@@ -76,7 +77,7 @@ If you sum the ints of the permissions you want to assign you get the permission
 db = sqlite3.connect('instances.db')
 cur = db.cursor()
 cur.execute('CREATE TABLE IF NOT EXISTS instances(instance_id INT NOT NULL, name TEXT, address TEXT, port INT, password TEXT, owner_id INT, game TEXT, default_perms INT, uses_custom_rotation INT, PRIMARY KEY (instance_id))')
-cur.execute('CREATE TABLE IF NOT EXISTS config(instance_id INT, guild_id INT, chat_trigger_words TEXT, chat_trigger_channel_id INT, chat_trigger_mentions TEXT, chat_trigger_confirmation TEXT, chat_trigger_cooldown INT, chat_trigger_require_reason INT, chat_log_channel_id INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
+cur.execute('CREATE TABLE IF NOT EXISTS config(instance_id INT, guild_id INT, chat_trigger_words TEXT, chat_trigger_channel_id INT, chat_trigger_mentions TEXT, chat_trigger_confirmation TEXT, chat_trigger_cooldown INT, chat_trigger_require_reason INT, channel_log_chat INT, channel_log_joins INT, channel_log_match INT, channel_log_rcon INT, channel_log_teamkills INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
 cur.execute('CREATE TABLE IF NOT EXISTS permissions(instance_id INT, user_id INT, perms INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
 db.commit()
 
@@ -271,7 +272,7 @@ class Instance:
             res = _insert_config_row(self.id)
         keys = ["guild_id", "chat_trigger_words", "chat_trigger_channel_id", "chat_trigger_mentions",
         "chat_trigger_confirmation", "chat_trigger_cooldown", "chat_trigger_require_reason",
-        "channel_log_chat", "channel_log_joins", "channel_log_match", "channel_log_rcon"]
+        "channel_log_chat", "channel_log_joins", "channel_log_match", "channel_log_rcon", "channel_log_teamkills"]
         self.id = res[0]
         for val in res[1:]:
             self.config[keys.pop(0)] = val
@@ -319,11 +320,11 @@ class Instance:
     def store_config(self):
         cur.execute('''UPDATE config SET guild_id = ?, chat_trigger_words = ?, chat_trigger_channel_id = ?, chat_trigger_mentions = ?,
         chat_trigger_confirmation = ?, chat_trigger_cooldown = ?, chat_trigger_require_reason = ?, channel_log_chat = ?, channel_log_joins = ?,
-        channel_log_match = ?, channel_log_rcon = ? WHERE instance_id = ?''', tuple( [val for val in self.config.values()] + [self.id] ))
+        channel_log_match = ?, channel_log_rcon = ?, channel_log_teamkills = ? WHERE instance_id = ?''', tuple( [val for val in self.config.values()] + [self.id] ))
         db.commit()
 
 def _insert_config_row(instance_id: int):
-    cur.execute("INSERT INTO config VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (instance_id, 0, "!admin", 0, "", "", 0, 0, 0, 0, 0, 0))
+    cur.execute("INSERT INTO config VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (instance_id, 0, "!admin", 0, "", "", 0, 0, 0, 0, 0, 0, 0))
     db.commit()
     cur.execute("SELECT * FROM config WHERE instance_id = ?", (instance_id,))
     return cur.fetchone()
