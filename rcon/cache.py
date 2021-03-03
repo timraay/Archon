@@ -27,13 +27,21 @@ SHORT_TEAM_NAMES = {
     "French Republic": "FR",
     "American Expeditionary Force": "AEF",
 
-    "British Army": "GB",
+    "British Army": "BA",
     "Canadian Army": "CAF",
     "Middle Eastern Alliance": "MEA",
     "Russian Ground Forces": "RUS",
     "United States Army": "US",
     "Insurgent Forces": "INS",
-    "Irregular Militia Forces": "MIL"
+    "Irregular Militia Forces": "MIL",
+
+    "British Armed Forces": "BA",
+    "CAF Battlegroup": "CAF",
+    "MEA Combined Arms Battalion": "MEA",
+    "Russian battalion tactical group": "RUS",
+    "US Brigade Combat Team": "US",
+    "Local Insurgent Cell": "INS",
+    "Local Militia Group": "MIL"
 }
 
 
