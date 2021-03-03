@@ -108,7 +108,11 @@ class Rcon(RconConnection):
         res = self.exec_command(f"AdminSetNextMap {map_name}")
         res = self._res_to_str(res)
         return res
-    def show_maps(self):
+    def show_current_map(self):
+        res = self.exec_command(f"ShowCurrentMap")
+        res = self._res_to_str(res)
+        return res
+    def show_next_map(self):
         res = self.exec_command(f"ShowNextMap")
         res = self._res_to_str(res)
         return res

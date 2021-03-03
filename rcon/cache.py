@@ -264,23 +264,23 @@ class ServerInstance(MapRotation):
             logs.ServerLogs(self.id).add('joins', messages)
 
     def _parse_maps(self):
-        res = self.rcon.show_maps()
+        current_map = self.rcon.show_current_map()
+        next_map = self.rcon.show_next_map()
         
         """
-        Response format example:
-        Current map is Logar Valley Skirmish v1, Next map is Gorodok AAS v2
+        Old response format example:
+        'Current map is Logar Valley Skirmish v1, Next map is Gorodok AAS v2'
+        New response format example:
+        'Current level is Yehorivka, layer is Yehorivka RAAS v3'
+        'Next level is Kohat, layer is Kohat RAAS v4'
         """
 
         # Try to read the current map
-        try:
-            current_map = Map(re.search(r"Current map is (.+),", res).group(1))
-        except:
-            current_map = self.current_map
+        try: current_map = Map(re.match(r"Current level is (.+), layer is (.+)", current_map).group(2))
+        except: current_map = self.current_map
         # Try to read the upcoming map
-        try:
-            next_map = Map(re.search(r"Next map is (.+)", res).group(1))
-        except:
-            next_map = self.next_map
+        try: next_map = Map(re.match(r"Next level is (.+), layer is (.+)", next_map).group(2))
+        except: next_map = self.next_map
 
         self.is_transitioning = False
         if current_map == "/Game/Maps/TransitionMap":
