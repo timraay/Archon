@@ -129,7 +129,7 @@ class moderation(commands.Cog):
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} squad-kicked {player.name} for "{reason}"')
 
-    @commands.command(description="Force a player to switch team", usage="r!switch_team <player> [reason]", aliases=["switch_teams", "change_team", "change_teams"])
+    @commands.command(description="Force a player to switch team", usage="r!switch_team <player> [reason]", aliases=["switch_teams", "change_team", "change_teams", "switch_player"])
     @check_perms(moderation=True)
     async def switch_team(self, ctx, name_or_id: str, *, reason: str = None):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
@@ -172,6 +172,43 @@ class moderation(commands.Cog):
         embed = base_embed(inst.id, title="Squad disbanded", description=res)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} disbanded {team.faction_short}/Squad{squad_id} for "{reason}"')
+
+
+    @commands.command(description="Force an entire squad to switch team", usage="r!switch_squad <team id> <squad id> [reason]", aliases=["switch_players"])
+    @check_perms(moderation=True)
+    async def switch_squad(self, ctx, team_id: int, squad_id: int, *, reason: str = None):
+        if team_id not in [1, 2]:
+            raise commands.BadArgument('team_id needs to be either 1 or 2')
+
+        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
+        
+        if team_id == 1:
+            team = inst.team1
+            team_other = inst.team2
+        elif team_id == 2:
+            team = inst.team2
+            team_other = inst.team1
+        squads = team.squads
+
+        try:
+            squad = [squad for squad in squads if squad.id == squad_id][0]
+        except:
+            raise commands.BadArgument('No squad found with this ID')
+
+        players = inst.select(team_id=team_id, squad_id=squad_id)
+        warn_reason = "An Admin switched your team."
+        if reason: warn_reason = warn_reason + " Reason: " + reason
+        for player in players:
+            try:
+                inst.rcon.change_team(player.steam_id)
+                inst.rcon.warn(player.steam_id, warn_reason)
+            except RconCommandError:
+                pass
+        
+        
+        embed = base_embed(inst.id, title=f"Switched {str(len(players))} players", description=f"from {team.faction} to {team_other.faction}")
+        await ctx.send(embed=embed)
+        ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} team-switched {", ".join([player.name for player in players])} for "{reason}"')
 
     
     @commands.command(description="Go to the next match", usage="r!skip_match [map name]", aliases=["skip", "end", "end_match", "switch_map", "switch"])
