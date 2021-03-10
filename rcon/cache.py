@@ -332,7 +332,7 @@ class ServerInstance(MapRotation):
 
         for line in lines:
             if line.startswith("Team ID"):
-                re_res = re.search(r'Team ID: ([12]) \(([\w\s]*)\)', line).groups()
+                re_res = re.search(r'Team ID: ([12]) \((.*)\)', line).groups()
                 team_id = int(re_res[0])
                 team_faction = str(re_res[1])
                 # TODO: Currently the team info gets replaced without comparing old to new.
