@@ -270,17 +270,24 @@ class ServerInstance(MapRotation):
         """
         Old response format example:
         'Current map is Logar Valley Skirmish v1, Next map is Gorodok AAS v2'
+
         New response format example:
         'Current level is Yehorivka, layer is Yehorivka RAAS v3'
         'Next level is Kohat, layer is Kohat RAAS v4'
         """
 
-        # Try to read the current map
-        try: current_map = Map(re.match(r"Current level is (.+), layer is (.+)", current_map).group(2))
-        except: current_map = self.current_map
-        # Try to read the upcoming map
-        try: next_map = Map(re.match(r"Next level is (.+), layer is (.+)", next_map).group(2))
-        except: next_map = self.next_map
+        try:
+            res = re.match(r"Current map is (.+), Next map is (.+)", next_map).groups()
+        except:
+            # Try to read the current map
+            try: current_map = Map(re.match(r"Current level is (.+), layer is (.+)", current_map).group(2))
+            except: current_map = self.current_map
+            # Try to read the upcoming map
+            try: next_map = Map(re.match(r"Next level is (.+), layer is (.+)", next_map).group(2))
+            except: next_map = self.next_map
+        else:
+            current_map = Map(res[0])
+            next_map = Map(res[1])
 
         self.is_transitioning = False
         if current_map == "/Game/Maps/TransitionMap":
