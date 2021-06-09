@@ -97,7 +97,7 @@ class EmbedMenu(discord.Embed):
         except (TypeError, IndexError, AttributeError):
             raise IndexError('option index out of range')
 
-        option['emoji']: str(emoji)
+        option['emoji'] = str(emoji)
         option['name'] = str(title)
         option['value'] = str(description)
         return self

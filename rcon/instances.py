@@ -84,7 +84,7 @@ db.commit()
 
 def add_instance(name: str, address: str, port: int, password: str, owner_id: int, game: str, default_perms: int = 0, uses_custom_rotation: int = 0):
     # Look for already existing instances that use this address.
-    cur.execute('SELECT * FROM instances WHERE address = ?', (address,))
+    cur.execute('SELECT * FROM instances WHERE address = ? AND port = ?', (address, port))
     if cur.fetchone():
         raise commands.BadArgument("A server with this address has already been registered")
 
