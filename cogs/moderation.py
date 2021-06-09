@@ -211,7 +211,7 @@ class moderation(commands.Cog):
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} team-switched {", ".join([player.name for player in players])} for "{reason}"')
 
     
-    @commands.command(description="Go to the next match", usage="r!skip_match [map name]", aliases=["skip", "end", "end_match", "switch_map", "switch"])
+    @commands.command(description="Go to the next match", usage="r!skip_match [map name]", aliases=["skip", "skip_map", "end_match", "end_map", "change_map", "switch_map"])
     @check_perms(moderation=True)
     async def skip_match(self, ctx, *, map_name: str = ""):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
