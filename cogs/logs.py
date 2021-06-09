@@ -12,7 +12,7 @@ from utils import Config, base_embed
 config = Config()
 
 
-SECONDS_BETWEEN_CACHE_REFRESH = 60
+SECONDS_BETWEEN_CACHE_REFRESH = 30
 SECONDS_BETWEEN_CHECKS = 15
 
 
@@ -264,11 +264,11 @@ class logs(commands.Cog):
                             if joins:    
                                 embed.color = discord.Color.dark_green()
                                 embed.description = "\n".join(joins)
-                                await channel_match.send(embed=embed)
+                                await channel_joins.send(embed=embed)
                             if leaves:    
                                 embed.color = discord.Embed.Empty
                                 embed.description = "\n".join(leaves)
-                                await channel_match.send(embed=embed)
+                                await channel_joins.send(embed=embed)
                     if channel_match:
                         default_embed = base_embed(inst.id)
                         logs = [log for log in new_logs if log['category'] == 'match']
