@@ -65,7 +65,7 @@ def add_empty_fields(embed):
     return embed
 
 
-def base_embed(instance, title: str = None, description: str = None, color=discord.Embed.Empty):
+def base_embed(instance, title: str = discord.Embed.Empty, description: str = discord.Embed.Empty, color=discord.Embed.Empty):
     if isinstance(instance, int):
         instance = Instance(instance)
     embed = EmbedMenu(title=title, description=description, color=color)
