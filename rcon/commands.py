@@ -122,7 +122,7 @@ class Rcon(RconConnection):
         res = self.exec_command(f"AdminSetMaxNumPlayers")
         res = self._res_to_str(res)
         return res
-    def change_password(self, password: str):
+    def change_password(self, password: str = ""):
         res = self.exec_command(f"AdminSetServerPassword {password}")
         res = self._res_to_str(res)
         return res

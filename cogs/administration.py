@@ -7,7 +7,7 @@ from pathlib import Path
 
 from rcon.commands import Rcon
 from rcon.instances import check_perms, Instance
-from rcon.map_rotation import MAPS_SQUAD, MAPS_BTW
+from rcon.map_rotation import MAPS_SQUAD, MAPS_BTW, MAPS_PS
 
 from utils import Config, base_embed
 config = Config()
