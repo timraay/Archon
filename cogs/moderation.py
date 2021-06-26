@@ -6,6 +6,7 @@ from ast import literal_eval
 from rcon.commands import Rcon, RconCommandError
 from rcon.instances import check_perms, is_game
 from rcon.logs import ServerLogs
+from rcon.map_rotation import Map
 
 from utils import Config, get_player_input_type, base_embed
 config = Config()
@@ -239,7 +240,7 @@ class moderation(commands.Cog):
     async def set_next_map(self, ctx, *, map_name: str):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
         res = inst.rcon.set_next_map(map_name)
-        inst.next_map = map_name
+        inst.next_map = Map(map_name)
 
         embed = base_embed(self.bot.cache.instance(ctx.author.id, ctx.guild.id).id, title="Queued the next map", description=res)
         await ctx.send(embed=embed)
