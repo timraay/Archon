@@ -651,8 +651,8 @@ class instances(commands.Cog):
             old_value, value = update_value(option, value)
 
             embed = base_embed(inst, title=f'Updated {CONFIGS[key]["name"]}')
-            embed.add_field(name="Old Value", value=str(old_value))
-            embed.add_field(name="New value", value=str(value))
+            embed.add_field(name="Old Value", value=str(old_value) if str(old_value) else 'Unknown')
+            embed.add_field(name="New value", value=str(value) if str(value) else 'Unknown')
             await ctx.send(embed=embed)
 
 def setup(bot):
