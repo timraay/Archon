@@ -1,19 +1,46 @@
-# All Beyond The Wire maps and layers as of v0.8
+# All Beyond The Wire maps and layers as of v0.12
 
-Zonnebeke Frontlines
-Zonnebeke Assault
+Ansoncourt Assault 1915 GER vs FR
+Ansoncourt Assault 1918 US vs GER
+Ansoncourt Frontlines 1915 FR vs GER
+Ansoncourt Frontlines 1918 US vs GER
 
-Frise Frontlines
-Frise Assault
-Frise Assault v2
+Cantigny Assault 1918 GER vs FR
+Cantigny Assault 1918 US vs GER
+Cantigny Frontlines 1918 FR vs GER
+Cantigny Frontlines 1918 US vs GER
 
-Ansoncourt Frontlines
-Ansoncourt Assault
+Chateau-Thierry Assault 1918 GER vs FR
+Chateau-Thierry Assault 1918 US vs GER
+Chateau-Thierry Frontlines 1918 FR vs GER
+Chateau-Thierry Frontlines 1918 US vs GER
 
-Cantigny Frontlines v1
-Cantigny Frontlines v2
-Cantigny Assault v1
-Cantigny Assault v2
+Combles Assault 1914 FR vs GER
+Combles Assault 1916 UK vs GER
+Combles Frontlines 1914 FR vs GER
+Combles Frontlines 1916 UK vs GER
+
+Frise Assault 1914 FR vs GER
+Frise Assault 1916 UK vs GER
+Frise Frontlines 1914 FR vs GER
+Frise Frontlines 1916 UK vs GER
+
+Poelcappelle Assault 1914 FR vs GER
+Poelcappelle Assault 1917 UK vs GER
+Poelcappelle Frontlines 1914 FR vs GER
+Poelcappelle Frontlines 1917 UK vs GER
+
+Sechault Assault 1915 GER vs FR
+Sechault Assault 1918 HHF vs GER
+Sechault Frontlines 1918 HHF vs GER
+
+Zonnebeke Assault 1914 FR vs GER
+Zonnebeke Assault 1914 GER vs FR
+Zonnebeke Assault 1915 UK vs GER
+Zonnebeke Frontlines 1914 FR vs GER
+Zonnebeke Frontlines 1915 UK vs GER
 
 Shooting Range FRvsGER
 Shooting Range USvsGER
+Shooting Range UKvsGER
+Shooting Range HHFvsGER

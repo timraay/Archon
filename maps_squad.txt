@@ -1,18 +1,18 @@
 # All Squad maps and layers as of v1.0
 
-Al Barash AAS v1
-Al Barash AAS v2
-Al Barash Insurgency v1
-Al Barash Invasion v1
-Al Barash Invasion v2
-Al Barash RAAS v1
-Al Barash Skirmish v1
-Al Barash Skirmish v2
-Al Barash TA v1
-Al Barash TC v1
-Al Barash TC v2
-CAF_Al_Barash_Invasion_v1
-CAF_Al_Barash_Invasion_v2
+Al Basrah AAS v1
+Al Basrah AAS v2
+Al Basrah Insurgency v1
+Al Basrah Invasion v1
+Al Basrah Invasion v2
+Al Basrah RAAS v1
+Al Basrah Skirmish v1
+Al Basrah Skirmish v2
+Al Basrah TA v1
+Al Basrah TC v1
+Al Basrah TC v2
+CAF_Al_Basrah_Invasion_v1
+CAF_Al_Basrah_Invasion_v2
 
 Belaya AAS v1
 Belaya AAS v2

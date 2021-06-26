@@ -8,6 +8,8 @@ with open('maps_btw.txt', 'r') as f:
     MAPS_BTW = [line for line in f.readlines() if line.strip() and not line.startswith('#')]
 with open('maps_squad.txt', 'r') as f:
     MAPS_SQUAD = [line for line in f.readlines() if line.strip() and not line.startswith('#')]
+with open('maps_ps.txt', 'r') as f:
+    MAPS_PS = [line for line in f.readlines() if line.strip() and not line.startswith('#')]
 
 
 
