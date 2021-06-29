@@ -292,7 +292,7 @@ class ServerInstance(MapRotation):
         self.is_transitioning = False
         if current_map == "/Game/Maps/TransitionMap":
             self.is_transitioning = True
-            current_map = self.current_map
+            return
 
         if self.current_map and current_map != self.current_map: # Map has changed
             self.is_transitioning = True
@@ -310,7 +310,7 @@ class ServerInstance(MapRotation):
         if self.current_map != current_map: self.current_map = current_map
         if self.next_map != next_map: self.next_map = next_map
 
-        if self.next_map and not self.next_map.validate(len(self.players)):
+        if self.next_map and not self.is_transitioning and not self.next_map.validate(len(self.players)):
             self.next_map = self._get_next_map()
             if self.next_map:
                 self.rcon.set_next_map(str(self.next_map))
