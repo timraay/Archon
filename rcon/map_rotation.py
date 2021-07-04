@@ -41,20 +41,21 @@ class MapRotation:
 
     def _get_next_map(self):
         all_entries = self.map_rotation.get_entries()
-        for entry in all_entries[::-1]:
+        validated = list()
+        for entry in all_entries:
             cooldown = entry.cooldown if entry.cooldown else self.map_cooldown
-            if not entry.validate(len(self.players)) or (entry.name in self.cooldowns.keys() and self.cooldowns[entry.name] < cooldown) or entry.name == str(self.current_map):
-                all_entries.remove(entry)
+            if entry.validate(len(self.players)) and not (entry.name in self.cooldowns.keys() and self.cooldowns[entry.name] < cooldown) and not entry.name == str(self.current_map):
+                validated.append(entry)
         
-        weights = [entry.weight for entry in all_entries]
+        weights = [entry.weight for entry in validated]
         total_weight = sum(weights)
-        probabilities = [weight / total_weight for weight in weights]
+        probabilities = [(weight / total_weight)*100 for weight in weights]
         '''
         for i in range(len(weights)):
             print(probabilities[i], weights[i], all_entries[i].name, [cond.type for cond in all_entries[i].conditions])
         '''
 
-        try: draw = choice(all_entries, p=probabilities)
+        try: draw = choice(validated, p=probabilities)
         except ValueError: draw = None
 
         return draw
