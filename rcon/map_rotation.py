@@ -49,10 +49,10 @@ class MapRotation:
         
         weights = [entry.weight for entry in validated]
         total_weight = sum(weights)
-        probabilities = [(weight / total_weight)*100 for weight in weights]
+        probabilities = [(weight / total_weight) for weight in weights]
         '''
         for i in range(len(weights)):
-            print(probabilities[i], weights[i], all_entries[i].name, [cond.type for cond in all_entries[i].conditions])
+            print(probabilities[i], weights[i], validated[i].name, [cond.type for cond in validated[i].conditions])
         '''
 
         try: draw = choice(validated, p=probabilities)
