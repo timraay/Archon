@@ -1,20 +1,25 @@
 from rcon.connection import RconConnection, RconError
 from ast import literal_eval
 
+import logging
+
 class Rcon(RconConnection):
 
     def _res_to_str(self, res):
         res = literal_eval(res)
         #print(len(res))
         if not res: # An empty list was received
+            logging.warning('Empty response received from %s:%s', self.server, self.port)
             res = "Empty response received"
         else:
             res = b"".join(res).strip(b'\x00\x01')
-            #print(res)
             res = res.decode('utf-8', errors='replace').replace('�', '')
             if res.startswith("ERROR: "):
                 res = res.replace("ERROR: ", "")
+                logging.error('%s:%s returned error: %s', self.server, self.port, res)
                 raise RconCommandError(res)
+            else:
+                logging.info('%s:%s returned response: %s', self.server, self.port, res)
         return res
 
     # PLAYERS

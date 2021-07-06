@@ -8,6 +8,8 @@ import struct
 import socket
 from datetime import datetime
 
+import logging
+
 
 # "Vanilla" RCON Packet types
 SERVERDATA_AUTH = 3
@@ -89,9 +91,8 @@ class RconConnection(object):
         self.password = password # Returns empty headers when invalid
         self.single_packet_mode = single_packet_mode
         self._connect_sock()
-        #print("created connection")
+        logging.debug('New RCON connection created with %s:%s', self.server, self.port)
         self.pkt_id = itertools.count(1)
-        #print("trying to authenticate with password", password)
         self._authenticate(password)
         self.all_player_chat = list()
 
@@ -109,22 +110,21 @@ class RconConnection(object):
         """Authenticate with the server using the given password."""
         auth_pkt = RconPacket(next(self.pkt_id), SERVERDATA_AUTH, password)
         self._send_pkt(auth_pkt)
-        #print("sent the password to the server")
         # The server should respond with a SERVERDATA_RESPONSE_VALUE followed by SERVERDATA_AUTH_RESPONSE.
         # Note that some server types omit the initial SERVERDATA_RESPONSE_VALUE packet.
         # For Squad, neither of these are sent and you'll face an empty stream.
         try:
             auth_resp = self.read_response(auth_pkt, skip_empty_headers=False)
         except RconError:
+            logging.warning('%s:%s refused RCON password %s', self.server, self.port, self.password)
             raise RconAuthError('Bad password')
-        #print("received the response from the server")
         if auth_resp.pkt_type == SERVERDATA_RESPONSE_VALUE:
             auth_resp = self.read_response()
         if auth_resp.pkt_type != SERVERDATA_AUTH_RESPONSE:
             raise RconError('Received invalid auth response packet')
         if auth_resp.pkt_id == -1:
             raise RconAuthError('Bad password')
-        #print("RCON logged in")
+        logging.debug('Logged in with RCON password at %s:%s', self.server, self.port)
 
     def exec_command(self, command):
         """Execute the given RCON command.
@@ -137,10 +137,11 @@ class RconConnection(object):
         #print(f'\n============================\n\nExecuting "{command}"')
         cmd_pkt = RconPacket(next(self.pkt_id), SERVERDATA_EXECCOMMAND, command)
         try:
+            logging.info('Sending RCON command to %s:%s: %s', self.server, self.port, command)
             self._send_pkt(cmd_pkt)
             resp = self.read_response(cmd_pkt, multi=True)
         except (OSError, RconEmptyHeaderError):
-            print("WARNING: OSError or RconEmptyHeaderError raised, creating new socket connection...")
+            logging.warn('%s:%s raised OSError or RconEmptyHeaderError, creating new socket...', self.server, self.port)
             self._connect_sock()
             self._authenticate(self.password)
             # Try again
@@ -301,7 +302,9 @@ class RconConnection(object):
         return self.all_player_chat
 
     def add_chat_message(self, message):
-        self.all_player_chat.append(message.strip('\x00'))
+        message = message.strip('\x00')
+        logging.info('Logging new chat message: %s', message)
+        self.all_player_chat.append(message)
         return self.all_player_chat
 
     def clear_player_chat(self):

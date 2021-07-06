@@ -5,6 +5,8 @@ import difflib
 import os
 from pathlib import Path
 
+import logging
+
 import discord
 from discord.ext.commands import BadArgument
 
@@ -126,6 +128,8 @@ class Cache():
 
 class ServerInstance(MapRotation):
     def __init__(self, instance_id, rcon):
+        logging.info('Registring new instance with ID %s', instance_id)
+        
         self.id = instance_id
         self.rcon = rcon
 
@@ -181,10 +185,13 @@ class ServerInstance(MapRotation):
 
     def update(self):
         try:
+            logging.info('Inst %s: Updating...', self.id)
             self._parse_maps()
             if not self.is_transitioning:
                 self._parse_players()
                 self._parse_squads()
+            else:
+                logging.info('Inst %s: Map is transitioning', self.id)
             self.last_updated = datetime.now()
         except RconAuthError as e:
             self = None
@@ -205,6 +212,8 @@ class ServerInstance(MapRotation):
 
         ----- Recently Disconnected Players [Max of 15] -----
         ID: 10 | SteamID: 76561198062628191 | Since Disconnect: 02m.30s | Name: [2.FJg]Gh0st
+
+        Note that Team ID can be N/A during map change
         """
 
         players = []
@@ -218,19 +227,19 @@ class ServerInstance(MapRotation):
 
             else: # Parse line
                 try:
-                    re_res = re.search(r'ID: (\d+) \| SteamID: (\d{17}) \| Name: (.*) \| Team ID: ([12]) \| Squad ID: ([\w/]*)', line).groups()
+                    re_res = re.search(r'ID: (\d+) \| SteamID: (\d{17}) \| Name: (.*) \| Team ID: ([\w/]*) \| Squad ID: ([\w/]*)', line).groups()
                 except: # Unable to fetch all data, skip this line
+                    logging.error('Inst %s: Could not parse player line: %s', self.id, line)
                     pass
                 else:
                     data = {}
                     data['id'] = int(re_res[0])
                     data['steam_id'] = int(re_res[1])
                     data['name'] = str(re_res[2])
-                    data['team_id'] = int(re_res[3])
-                    try:
-                        data['squad_id'] = int(re_res[4].strip())
-                    except:
-                        data['squad_id'] = -1
+                    try: data['team_id'] = int(re_res[3].strip())
+                    except: data['team_id'] = 0
+                    try: data['squad_id'] = int(re_res[4].strip())
+                    except: data['squad_id'] = -1
 
                     player = OnlinePlayer(data['steam_id'], data['name'], data['team_id'], data['squad_id'], data['id'])
                     players.append(player)
@@ -244,6 +253,8 @@ class ServerInstance(MapRotation):
         
         connected = [player for player in players if int(player) not in self.ids]
         disconnected = [player for player in self.players if int(player) not in ids]
+        if connected: logging.info('Inst %s: Connected: %s', self.id, ', '.join([player.name for player in connected]))
+        if connected: logging.info('Inst %s: Disonnected: %s', self.id, ', '.join([player.name for player in disconnected]))
 
         # Update the cache
         for i, player in enumerate(players):
@@ -289,6 +300,8 @@ class ServerInstance(MapRotation):
             current_map = Map(res[0])
             next_map = Map(res[1])
 
+        logging.info('Inst %s: Current map is %s, next map is %s', self.id, current_map, next_map)
+
         self.is_transitioning = False
         if current_map == "/Game/Maps/TransitionMap":
             self.is_transitioning = True
@@ -301,16 +314,22 @@ class ServerInstance(MapRotation):
                 message += f" The match lasted {str(int((datetime.now() - self.last_map_change).total_seconds() / 60))} minutes."
             else:
                 message += " Match duration is unknown."
+            logging.info('Inst %s: %s', self.id, message)
             logs.ServerLogs(self.id).add('match', message)
             self.last_map_change = datetime.now()
 
             if self.map_rotation:
-                next_map = self.map_changed(current_map)
+                try:
+                    next_map = self.map_changed(current_map)
+                    logging.info('Inst %s: MAPROT: Next map will be %s', self.id, next_map)
+                except Exception as e:
+                    logging.error('Inst %s: MAPROT: An error was raised while looking for next map: %s: %s', self.id, e.__class__.__name__, e)
         
         if self.current_map != current_map: self.current_map = current_map
         if self.next_map != next_map: self.next_map = next_map
 
-        if self.next_map and not self.is_transitioning and not self.next_map.validate(len(self.players)):
+        if self.map_rotation and self.next_map and not self.is_transitioning and not self.next_map.validate(len(self.players)):
+            logging.warning('Inst %s: MAPROT: %s failed to validate. Changing map...', self.id)
             self.next_map = self._get_next_map()
             if self.next_map:
                 self.rcon.set_next_map(str(self.next_map))
@@ -347,15 +366,19 @@ class ServerInstance(MapRotation):
                 elif team_id == 2: self.team2 = Team(team_id, team_faction)
                 
             elif line.startswith("ID"):
-                re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False)', line).groups()
-                squad_id = int(re_res[0])
-                name = str(re_res[1])
-                size = int(re_res[2])
-                player_ids = [player.steam_id for player in self.select(team_id=team_id, squad_id=squad_id)]
-                locked = True if re_res[3] == "True" else False
+                try:
+                    re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False)', line).groups()
+                except:
+                    logging.error('Inst %s: Failed to parse squad line: %s', self.id, line)
+                else:
+                    squad_id = int(re_res[0])
+                    name = str(re_res[1])
+                    size = int(re_res[2])
+                    player_ids = [player.steam_id for player in self.select(team_id=team_id, squad_id=squad_id)]
+                    locked = True if re_res[3] == "True" else False
 
-                if team_id == 1: self.team1.set_squad(squad_id, name, player_ids, locked)
-                elif team_id == 2: self.team2.set_squad(squad_id, name, player_ids, locked)
+                    if team_id == 1: self.team1.set_squad(squad_id, name, player_ids, locked)
+                    elif team_id == 2: self.team2.set_squad(squad_id, name, player_ids, locked)
             
         self.team1.unassigned = [player.steam_id for player in self.select(team_id=1, squad_id=-1)]
         self.team2.unassigned = [player.steam_id for player in self.select(team_id=2, squad_id=-1)]

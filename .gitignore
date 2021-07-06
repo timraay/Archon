@@ -7,6 +7,8 @@ token.txt
 # Bot icon
 *.xcf
 
+# Log files
+logs/
 # Custom map rotations
 rotations/
 

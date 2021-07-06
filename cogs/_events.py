@@ -6,6 +6,8 @@ from ast import literal_eval
 import difflib
 import re
 
+import logging
+
 from utils import Config
 config = Config()
 
@@ -33,6 +35,10 @@ class _events(commands.Cog):
         self.bot = bot
         self.update_status.start()
 
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        logging.info('%s (%s) ran a command: %s', ctx.author.name+'#'+ctx.author.discriminator, ctx.author.id, ctx.message.content)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -90,6 +96,7 @@ class _events(commands.Cog):
                 print("\nError in " + ctx.guild.name + " #" + ctx.channel.name + ":\n" + str(error))
             except:
                 print("\nFailed to log error")
+            logging.exception('Ignoring exception in command: %s: %s', error.__class__.__name__, error)
 
 
 

@@ -4,6 +4,8 @@ from numpy.random import choice
 import pytz
 from copy import deepcopy
 
+import logging
+
 with open('maps_btw.txt', 'r') as f:
     MAPS_BTW = [line for line in f.readlines() if line.strip() and not line.startswith('#')]
 with open('maps_squad.txt', 'r') as f:
@@ -50,13 +52,14 @@ class MapRotation:
         weights = [entry.weight for entry in validated]
         total_weight = sum(weights)
         probabilities = [(weight / total_weight) for weight in weights]
-        '''
-        for i in range(len(weights)):
-            print(probabilities[i], weights[i], validated[i].name, [cond.type for cond in validated[i].conditions])
-        '''
+
+        log_maps = '\n'.join([' '.join([str(probabilities[i]), str(weights[i]), str(validated[i].name), str([cond.type for cond in validated[i].conditions])]) for i in range(len(weights))])
+        logging.info('Inst %s: MAPROT: Available maps:\n%s', self.id, log_maps)
 
         try: draw = choice(validated, p=probabilities)
-        except ValueError: draw = None
+        except ValueError:
+            logging.warning('Inst %s: MAPROT: Failed to draw a map, returning none...', self.id)
+            draw = None
 
         return draw
 

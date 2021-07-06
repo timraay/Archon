@@ -38,10 +38,6 @@ async def command_prefix(bot, msg):
 bot = commands.Bot(intents=intents, command_prefix=command_prefix, case_insensitive=True)
 bot.remove_command('help')
 
-from rcon.cache import Cache
-bot.cache = Cache()
-
-
 @bot.group(invoke_without_command=True, aliases=['cog'])
 @commands.is_owner()
 async def module(ctx):
@@ -147,7 +143,19 @@ for cog in os.listdir(Path("./cogs")):
             print(f"{cog} can not be loaded:")
             raise e
 
+# Setup logger
+import logging
+from datetime import datetime
+logname = datetime.utcnow().strftime('logs/Archon-%Y.%m.%d-%H.%M.%S.log')
+logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', datefmt='%m/%d %H:%M:%S', filename=logname, filemode='w+', level=logging.INFO)
+logging.info('Launching bot...')
+
+# Initialize cache
+from rcon.cache import Cache
+bot.cache = Cache()
+
 # Run the bot
 with open("token.txt", "r") as f:
     token = f.read()
+
 bot.run(token)
