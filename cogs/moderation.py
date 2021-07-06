@@ -20,7 +20,7 @@ class moderation(commands.Cog):
         self.bot = bot
 
 
-    @commands.command(description="Warn a player", usage="r!warn <player> <reason>", aliases=["warn_player"])
+    @commands.command(description="Warn a player", usage="r!warn <player> <reason>", aliases=["warn_player", "message", "msg"])
     @check_perms(moderation=True)
     async def warn(self, ctx, name_or_id: str, *, reason: str):
         inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
@@ -32,6 +32,21 @@ class moderation(commands.Cog):
         embed = base_embed(inst.id, title="Player warned", description=res)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} warned {player.name} for "{reason}"')
+        
+    @commands.command(description="Warn all players", usage="r!warn_all <reason>", aliases=["warn_players", "message_all", "msg_all"])
+    @check_perms(moderation=True)
+    async def warn_all(self, ctx, *, reason: str):
+        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
+        amount = 0
+        for player in inst.players:
+            try: inst.rcon.warn(player.steam_id, reason)
+            except: pass
+            else: amount += 1
+        
+        res = f"Warned {str(amount)}/{str(len(inst.players))} players for '{reason}'"
+        embed = base_embed(inst.id, title="All players warned", description=res)
+        await ctx.send(embed=embed)
+        ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} warned {str(amount)} players for "{reason}"')
     
     @commands.command(description="Kill a player and remove them from their squad", usage="r!punish <player> [reason]", aliases=["punish_player", "kill", "kill_player"])
     @check_perms(moderation=True)
