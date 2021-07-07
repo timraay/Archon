@@ -70,7 +70,7 @@ class MapRotation:
     def map_changed(self, new_map):
         self._decrease_cooldown()
         self.cooldowns[str(new_map)] = 0
-        if str(new_map) == str(self.next_map) or (self.next_map and not self.next_map.validate(len(self.players))):
+        if str(new_map) == str(self.next_map) or (self.next_map and not self.next_map.validate(len(self.players))) or self.is_transitioning:
             self.next_map = self._get_next_map()
             if self.next_map:
                 self.rcon.set_next_map(self.next_map)
