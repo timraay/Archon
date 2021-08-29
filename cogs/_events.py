@@ -8,6 +8,8 @@ import re
 
 import logging
 
+from discord.ext.commands.errors import CommandNotFound
+
 from utils import Config
 config = Config()
 
@@ -57,6 +59,9 @@ class _events(commands.Cog):
         if isinstance(error, commands.CommandInvokeError):
             error = error.original
 
+        if not isinstance(error, commands.CommandNotFound):
+            logging.warning('Error in command %s: %s: %s', ctx.command.name, error.__class__.__name__, error)
+
         if isinstance(error, commands.CommandNotFound):
             used_command = re.search(r'Command "(.*)" is not found', str(error)).group(1)
             all_commands = [command.name for command in self.bot.commands]
@@ -90,13 +95,15 @@ class _events(commands.Cog):
             await ctx.send(f"{error_emoji} Failed to import map rotation!\n`{str(error)}`")
         else:
             await ctx.send(f"{error_emoji} Oops, something went wrong!\n`{str(error)}`")
+            try: raise error # This will log the traceback
+            except: logging.exception('Ignoring exception in command %s: %s: %s', ctx.command.name, error.__class__.__name__, error)
 
         if not isinstance(error, commands.CommandOnCooldown):
             try:
                 print("\nError in " + ctx.guild.name + " #" + ctx.channel.name + ":\n" + str(error))
             except:
                 print("\nFailed to log error")
-            logging.exception('Ignoring exception in command: %s: %s', error.__class__.__name__, error)
+            
 
 
 

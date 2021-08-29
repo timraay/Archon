@@ -34,7 +34,7 @@ class logs(commands.Cog):
     @check_perms(logs=True)
     async def chat(self, ctx):
         
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
         await self._query(inst)
         messages = ServerLogs(inst.id).get_logs('chat')
 
@@ -59,7 +59,7 @@ class logs(commands.Cog):
     @check_perms(logs=True)
     async def logs(self, ctx, category: str = None):
         
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
         await self._query(inst)
 
         if category != None: category = category.lower()

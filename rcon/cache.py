@@ -10,7 +10,7 @@ import logging
 import discord
 from discord.ext.commands import BadArgument
 
-from rcon import instances, logs
+from rcon import instances, logs, permissions
 from rcon.commands import Rcon
 from rcon.connection import RconAuthError
 from rcon.query import SourceQuery
@@ -78,30 +78,28 @@ class Cache():
             raise BadArgument("guild needs to be either int or discord.Guild")
         return guild
 
-    def _get_selected_instance(self, user_id, guild_id=None):
-        if user_id not in self.selected_instance:
-            self.selected_instance[user_id] = -1
+    def _get_selected_instance(self, user, guild_id=None):
+        if user.id not in self.selected_instance:
+            self.selected_instance[user.id] = -1
 
         try:
-            instances.Instance(self.selected_instance[user_id])
+            instances.Instance(self.selected_instance[user.id])
         except:
-            try: self.selected_instance[user_id] = instances.get_available_instances(user_id, guild_id)[0][0].id
-            except: self.selected_instance[user_id] = -1
+            try: self.selected_instance[user.id] = instances.get_available_instances(user, guild_id)[0][0].id
+            except: self.selected_instance[user.id] = -1
 
-        return self.selected_instance[user_id]
+        return self.selected_instance[user.id]
 
     def perms(self, user, guild=None):
-        user_id = self._get_user_id(user)
         guild_id = self._get_guild_id(guild)
-        selected_instance = self._get_selected_instance(user_id, guild_id)
-        perms = instances.get_perms(user_id, guild_id, selected_instance)
+        selected_instance = self._get_selected_instance(user, guild_id)
+        perms = instances.get_perms(user, guild_id, selected_instance)
         return perms
 
     def instance(self, user, guild=None, by_inst_id=False):
         if by_inst_id:
-            instance_id = user
+            instance_id = user.id
         else:
-            user = self._get_user_id(user)
             guild = self._get_guild_id(guild)
             instance_id = self._get_selected_instance(user, guild)
 

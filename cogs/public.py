@@ -4,7 +4,7 @@ import json
 from ast import literal_eval
 from datetime import datetime
 
-from rcon.instances import check_perms, get_available_instances, perms_to_dict, has_perms
+from rcon.instances import check_perms, get_available_instances, get_perms
 
 from utils import Config, get_player_input_type, add_empty_fields, base_embed, get_name
 config = Config()
@@ -22,7 +22,7 @@ class public(commands.Cog):
     @check_perms(public=True)
     async def server(self, ctx, *, instance_id=None):
         if instance_id:
-            instances = get_available_instances(ctx.author.id, ctx.guild.id)
+            instances = get_available_instances(ctx.author, ctx.guild.id)
             inst = None
             for i, (instance, perms) in enumerate(instances):
                 if str(i+1) == instance_id or instance.name.lower() == instance_id.lower():
@@ -30,22 +30,24 @@ class public(commands.Cog):
                     break
             if not inst:
                 raise commands.BadArgument("No instance found with name or ID %s" % instance_id)
-            if perms_to_dict(perms)["public"] == False:
+            if not perms.public:
                 raise commands.BadArgument("Missing required permissions for this instance")
             inst = self.bot.cache.instance(inst.id, by_inst_id=True).update()
         else:
-            inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
+            inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         
         embed = self.create_server_embed(inst)
         await ctx.send(embed=embed)
     
     @commands.command(description="View statuses of all accessible servers", usage="r!servers")
     async def servers(self, ctx):
-        instances = get_available_instances(ctx.author.id, ctx.guild.id)
-        instances = [self.bot.cache.instance(inst.id, by_inst_id=True).update() for inst, perms in instances if perms_to_dict(perms)["public"] == True]
+        instances = get_available_instances(ctx.author, ctx.guild.id)
+        instances = [self.bot.cache.instance(inst.id, by_inst_id=True).update() for inst, perms in instances if perms.public]
         for inst in instances:      
             embed = self.create_server_embed(inst)
             await ctx.send(embed=embed)
+        if not instances:
+            await ctx.send(":no_entry_sign: There are no instances that let you do this!")
 
     def create_server_embed(self, inst):
         playercount = len(inst.players)
@@ -65,12 +67,12 @@ class public(commands.Cog):
 
 
     @commands.command(description="Get an overview of both teams", usage="r!players [team id]", aliases=["team", "teams", "squads"])
-    @check_perms(public=True)
+    @check_perms(players=True)
     async def players(self, ctx, team_id: int = 1):
         if team_id not in [1, 2]:
             raise commands.BadArgument('team_id needs to be either 1 or 2')
         
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
 
         def build_embed(team_id):
             if team_id == 1: team = inst.team1
@@ -131,12 +133,12 @@ class public(commands.Cog):
                 await msg.remove_reaction(reaction.emoji, user)
 
     @commands.command(description="Get an overview of a squad", usage="r!squad <team id> <squad id>")    
-    @check_perms(public=True)
+    @check_perms(players=True)
     async def squad(self, ctx, team_id: int, squad_id: int):
         if team_id not in [1, 2]:
             raise commands.BadArgument('team_id needs to be either 1 or 2')
         
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id).update()
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         if team_id == 1: team = inst.team1
         elif team_id == 2: team = inst.team2
         squad = None
@@ -165,13 +167,13 @@ class public(commands.Cog):
         await ctx.send(embed=embed)
     
     @commands.command(description="Receive playerdata", usage="r!player <name or id>", aliases=["playerdata", "list_player", "listplayer"])
-    @check_perms(public=True)
+    @check_perms(players=True)
     async def player(self, ctx, *, name_or_id):
-        player = self.bot.cache.instance(ctx.author.id, ctx.guild.id).get_player(name_or_id, related_names=True)
+        player = self.bot.cache.instance(ctx.author, ctx.guild.id).get_player(name_or_id, related_names=True)
         if not player:
             raise commands.BadArgument("Couldn't find a player with this name or ID currently online")
         
-        inst_id = self.bot.cache._get_selected_instance(ctx.author.id, ctx.channel.id)
+        inst_id = self.bot.cache._get_selected_instance(ctx.author, ctx.channel.id)
         embed = base_embed(inst_id, title=player.name, description=f"[View player on Steam](https://steamcommunity.com/profiles/{str(player.steam_id)})")
         embed.add_field(name="Steam ID", value=f"`{player.steam_id}`")
         embed.add_field(name="Score", value=str(player.score))
@@ -181,8 +183,13 @@ class public(commands.Cog):
         embed.add_field(name="Squad ID", value=str(player.squad_id))
         msg = await ctx.send(embed=embed)
 
-        if has_perms(ctx, moderation=True):
-            emojis = ["<:message:781233615651864576>", "<:switch:781235282862800936>", "<:punish:781235282984304640>", "<:kick:781233615610183750>", "<:ban:781233615656190014>"]
+        perms = get_perms(ctx.author, ctx.guild.id, inst_id)
+        emojis = list()
+        if perms.message: emojis.append("<:message:781233615651864576>")
+        if perms.teamchange: emojis.append("<:switch:781235282862800936>")
+        if perms.kick: emojis += ["<:punish:781235282984304640>", "<:kick:781233615610183750>"]
+        if perms.ban: emojis.append("<:ban:781233615656190014>")
+        if emojis:
             for emoji in emojis:
                 await msg.add_reaction(emoji)
 
@@ -254,7 +261,7 @@ class public(commands.Cog):
     @commands.command(description="View the current and upcoming map", usage="r!map")
     @check_perms(public=True)
     async def map(self, ctx):
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
         current_map = inst.current_map
         next_map = inst.next_map
         try:

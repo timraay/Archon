@@ -21,9 +21,9 @@ class administration(commands.Cog):
         self.bot = bot
 
     @commands.command(description="Request a command through RCON", usage="r!execute <cmd>", aliases=["exec"], hidden=False)
-    @check_perms(administration=True)
+    @check_perms(execute=True)
     async def execute(self, ctx, *, cmd):
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
         res = inst.rcon.exec_command(cmd)
         res = literal_eval(res)
         if not res: # An empty list was received
@@ -39,26 +39,26 @@ class administration(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(description="Set the max player limit", usage="r!set_max_player_limit", aliases=["set_player_limit", "player_limit"])
-    @check_perms(administration=True)
-    async def set_max_player_limit(self, ctx, limit: int):
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+    @commands.command(description="Set the max player limit", usage="r!set_max_player_limit", aliases=["set_player_limit", "set_max_player_limit"])
+    @check_perms(config=True)
+    async def player_limit(self, ctx, limit: int):
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
         res = inst.rcon.set_max_player_limit(limit)
 
         embed = base_embed(inst.id, title="Max player limit changed", description=res)
         await ctx.send(embed=embed)
     
     @commands.command(description="Set or remove a server password", usage="r!password [password]", aliases=["set_password"])
-    @check_perms(administration=True)
+    @check_perms(password=True)
     async def password(self, ctx, password: str = ""):
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
         res = inst.rcon.set_password(password)
 
         embed = base_embed(inst.id, title="Password updated", description=res)
         await ctx.send(embed=embed)
 
     @commands.command(description="Set the clock speed on the server", usage="r!slomo <percentage>", aliases=["clockspeed", "clock_speed"])
-    @check_perms(administration=True)
+    @check_perms(cheat=True)
     async def slomo(self, ctx, percentage: str):
         try:
             if percentage.endswith("%"): percentage = float(percentage[:-1]) / 100
@@ -66,16 +66,16 @@ class administration(commands.Cog):
         except ValueError:
             raise commands.BadArgument('%s needs to be a percentage' % percentage)
 
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
         res = inst.rcon.set_clockspeed(percentage)
 
         embed = base_embed(inst.id, title="Server clockspeed adjusted", description=res)
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, description="Enable or disable a custom map rotation", usage="r!rotation [subcommand]", aliases=["map_rotation", "rotation"])
-    @check_perms(administration=True)
+    @check_perms(config=True)
     async def maprotation(self, ctx):
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
         embed = base_embed(inst.id, title="Custom Map Rotation")
         
         embed.description = "`r!rotation upload` - Upload a new custom rotation\n`r!rotation enable` - Enable the custom rotation\n`r!rotation disable` - Disable custom rotation\n`r!rotation download` - Download your custom rotation"
@@ -100,7 +100,7 @@ class administration(commands.Cog):
         await ctx.send(embed=embed)
 
     @maprotation.command()
-    @check_perms(administration=True)
+    @check_perms(config=True)
     async def upload(self, ctx):
         if not ctx.message.attachments:
             await ctx.send(f":no_entry_sign: Please include your custom rotation as an attachment!")
@@ -114,7 +114,7 @@ class administration(commands.Cog):
             await ctx.send(f":no_entry_sign: Invalid attachment!\n`Invalid file extension! Expected .json but received {extension}`")
             return
         
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
 
         content = str(await attachment.read(), 'utf-8')
         content = json.loads(content)
@@ -147,9 +147,9 @@ class administration(commands.Cog):
         await ctx.send(embed=embed)
 
     @maprotation.command()
-    @check_perms(administration=True)
+    @check_perms(config=True)
     async def enable(self, ctx):        
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
 
         if inst.map_rotation:
             await ctx.send(':no_entry_sign: Custom Map Rotation is already enabled!')
@@ -171,9 +171,9 @@ class administration(commands.Cog):
         await ctx.send(embed=embed)
 
     @maprotation.command()
-    @check_perms(administration=True)
+    @check_perms(config=True)
     async def disable(self, ctx):        
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
 
         if inst.map_rotation == None:
             await ctx.send(':no_entry_sign: Custom Map Rotation is already disabled!')
@@ -188,9 +188,9 @@ class administration(commands.Cog):
         await ctx.send(embed=embed)
     
     @maprotation.command()
-    @check_perms(administration=True)
+    @check_perms(config=True)
     async def download(self, ctx):
-        inst = self.bot.cache.instance(ctx.author.id, ctx.guild.id)
+        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
 
         path = Path(f'rotations/{str(inst.id)}.json')
         if not os.path.exists(path):

@@ -27,7 +27,7 @@ async def command_prefix(bot, msg):
 
     if inst_id:
         inst_id = int(inst_id)
-        instances = get_available_instances(msg.author.id, msg.guild.id)
+        instances = get_available_instances(msg.author, msg.guild.id)
         try: inst = [inst for i, (inst, perms) in enumerate(instances) if i+1 == inst_id][0]
         except IndexError:
             await msg.channel.send(":no_entry_sign: Invalid command prefix!\n`No instance found with ID %s`" % inst_id)

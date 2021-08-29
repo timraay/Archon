@@ -1,7 +1,9 @@
 import sqlite3
 import discord
+from discord import guild
 from discord.ext import commands
 from rcon.connection import RconConnection
+from rcon.permissions import *
 
 
 """
@@ -50,6 +52,7 @@ permissions
     - instance_id       # The instance ID this user has permissions for
     - user_id           # The user ID of the discord user that has permissions
     - perms             # The permissions this user has for this instance
+    - perms_type        # The type of object that the permissions will be for, eg. "role", "channel" or "user"
 
 
 The fourth and final table in instances.db will be named "logs" with a row for each logged action.
@@ -74,11 +77,14 @@ If you sum the ints of the permissions you want to assign you get the permission
 """
 
 
+
+
+
 db = sqlite3.connect('instances.db')
 cur = db.cursor()
 cur.execute('CREATE TABLE IF NOT EXISTS instances(instance_id INT NOT NULL, name TEXT, address TEXT, port INT, password TEXT, owner_id INT, game TEXT, default_perms INT, uses_custom_rotation INT, PRIMARY KEY (instance_id))')
 cur.execute('CREATE TABLE IF NOT EXISTS config(instance_id INT, guild_id INT, chat_trigger_words TEXT, chat_trigger_channel_id INT, chat_trigger_mentions TEXT, chat_trigger_confirmation TEXT, chat_trigger_cooldown INT, chat_trigger_require_reason INT, channel_log_chat INT, channel_log_joins INT, channel_log_match INT, channel_log_rcon INT, channel_log_teamkills INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
-cur.execute('CREATE TABLE IF NOT EXISTS permissions(instance_id INT, user_id INT, perms INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
+cur.execute('CREATE TABLE IF NOT EXISTS permissions(instance_id INT, user_id INT, perms INT, perms_type TEXT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
 db.commit()
 
 
@@ -120,63 +126,13 @@ def edit_instance(inst_id: int, name: str, address: str, port: int, password: st
     
     return inst
 
-def get_perms(user_id: int, guild_id: int, instance_id: int, is_dict=True):
-    perms_int = 0
-    
-    for instance, perms in get_available_instances(user_id, guild_id):
-        if instance.id == instance_id:
-            perms_int = perms
-
-    if not is_dict:
-        return perms_int
-    else:
-        perms_dict = perms_to_dict(perms_int)
-        return perms_dict
-
-def perms_to_dict(perms: int):
-    perms_bin = format(perms, 'b').zfill(5)[::-1]
-
-    perms_dict = {}
-    perms_dict['public'] = bool(int(perms_bin[0]))
-    perms_dict['logs'] = bool(int(perms_bin[1]))
-    perms_dict['moderation'] = bool(int(perms_bin[2]))
-    perms_dict['administration'] = bool(int(perms_bin[3]))
-    perms_dict['instance'] = bool(int(perms_bin[4]))
-    return perms_dict
-
 def get_instances():
     cur.execute('SELECT instance_id FROM instances')
     instances = [Instance(instance_id[0]) for instance_id in cur.fetchall()]
     return instances
 
-def get_available_instances(user_id: int, guild_id: int = None):
-    instances = []
-
-    cur.execute('SELECT instance_id FROM instances WHERE owner_id = ? ORDER BY instance_id', (user_id,))
-    res = [(row[0], 31) for row in cur.fetchall()]
-    for instance_id, perms in res:
-        instance = Instance(instance_id)
-        instances.append((instance, perms))
-
-    cur.execute('SELECT instance_id, perms FROM permissions WHERE user_id = ? AND perms > 0 ORDER BY instance_id', (user_id,))
-    res = cur.fetchall()
-    for instance_id, perms in res:
-        if instance_id in [instance.id for instance, perms in instances]:
-            continue
-        instance = Instance(instance_id)
-        instances.append((instance, perms))
-    
-    if guild_id:
-        cur.execute('SELECT instance_id, default_perms FROM instances WHERE instance_id IN (SELECT instance_id FROM config WHERE guild_id = ?) AND default_perms > 0 ORDER BY instance_id', (guild_id,))
-        res = cur.fetchall()
-        for instance_id, perms in res:
-            if instance_id in [instance.id for instance, perms in instances]:
-                continue
-            instance = Instance(instance_id)
-            instances.append((instance, perms))
-
-    
-    return instances
+def get_available_instances(user, guild_id: int = None):
+    return [(Instance(inst_id), Permissions.from_int(perms)) for inst_id, perms in get_instances_for_user(user, guild_id).items()]
 
 def get_guild_instances(guild_id: int):
     instances = []
@@ -187,61 +143,12 @@ def get_guild_instances(guild_id: int):
         instances.append((instance, perms))
     return instances
 
-def set_player_perms(user_id: int, instance_id: int, perms: int):
-    # Check if player already has perms set for this instance
-    cur.execute('SELECT * FROM permissions WHERE user_id = ? AND instance_id = ?', (user_id, instance_id))
-    
-    # Players already has perms set for this instance
-    if cur.fetchone():
-        cur.execute('UPDATE permissions SET perms = ? WHERE user_id = ? AND instance_id = ?', (perms, user_id, instance_id))
-        db.commit()
-    
-    # Player doesn't have any perms set for this instance yet
-    else:
-        cur.execute('INSERT INTO permissions VALUES (?,?,?)', (instance_id, user_id, perms))
-        db.commit()
-def reset_player_perms(user_id: int, instance_id: int):
-    # Check if player has perms set for this instance
-    cur.execute('SELECT * FROM permissions WHERE user_id = ? AND instance_id = ?', (user_id, instance_id))
-    
-    # Player has perms set for this instance
-    if cur.fetchone():
-        cur.execute('DELETE FROM permissions WHERE user_id = ? AND instance_id = ?', (user_id, instance_id))
-        db.commit()
-
-# Predicate
-def has_perms(ctx, public=None, logs=None, moderation=None, administration=None, instance=None):
-    perms = ctx.bot.cache.perms(ctx.author.id, ctx.guild.id)
-    is_ok = True
-    if public != None and public != perms["public"]: is_ok = False
-    if logs != None and logs != perms["logs"]: is_ok = False
-    if moderation != None and moderation != perms["moderation"]: is_ok = False
-    if administration != None and administration != perms["administration"]: is_ok = False
-    if instance != None and instance != perms["instance"]: is_ok = False
-    return is_ok
 
 # Wrappers
-def check_perms(public=None, logs=None, moderation=None, administration=None, instance=None):
-    async def predicate(ctx):
-        perms = ctx.bot.cache.perms(ctx.author.id, ctx.guild.id)
-        is_ok = True
-        if public != None and public != perms["public"]: is_ok = False
-        if logs != None and logs != perms["logs"]: is_ok = False
-        if moderation != None and moderation != perms["moderation"]: is_ok = False
-        if administration != None and administration != perms["administration"]: is_ok = False
-        if instance != None and instance != perms["instance"]: is_ok = False
-        if not is_ok:
-            instance_id = ctx.bot.cache._get_selected_instance(ctx.author.id)
-            if instance_id == -1:
-                await ctx.send(":no_entry_sign: You don't have access to any instances yet!")
-            else:
-                await ctx.send(":no_entry_sign: You don't have the required permissions to execute this command!")
-        return is_ok
-    return commands.check(predicate)
 def is_game(game):
     async def predicate(ctx):
         game = list(game)
-        instance = Instance(ctx.bot.cache._get_selected_instance(ctx.author.id, ctx.guild.id))
+        instance = Instance(ctx.bot.cache._get_selected_instance(ctx.author, ctx.guild.id))
         if instance.game not in game:
             await ctx.send(f":no_entry_sign: Invalid instance!\n`This command only works for %s servers`" % ", ".join(game).upper())
             return False
@@ -249,7 +156,7 @@ def is_game(game):
     return commands.check(predicate)
 def is_owner():
     async def predicate(ctx):
-        cur.execute('SELECT instance_id FROM instances WHERE instance_id = ? AND owner_id = ?', (ctx.bot.cache._get_selected_instance(ctx.author.id, ctx.guild.id), ctx.author.id))
+        cur.execute('SELECT instance_id FROM instances WHERE instance_id = ? AND owner_id = ?', (ctx.bot.cache._get_selected_instance(ctx.author, ctx.guild.id), ctx.author.id))
         if cur.fetchone():
             return True
         else:

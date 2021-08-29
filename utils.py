@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from asyncio import TimeoutError
 
-from rcon.instances import Instance, has_perms
+from rcon.instances import Instance
 
 
 GAME_IMAGES = {
@@ -19,11 +19,12 @@ def get_name(user):
 class Config:
 
     def __init__(self, path: str = "config.txt"):
+        self.path = path
         self.update()
 
     def update(self):
         self.config = {}
-        with open("config.txt", "r") as f:
+        with open(self.path, "r") as f:
             for line in f.readlines():
                 line = line.strip("\n").split("=", 1)
                 if len(line) == 2:

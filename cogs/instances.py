@@ -1,12 +1,10 @@
 import discord
 from discord.ext import commands
 import asyncio
+import re
 
 from rcon.connection import RconAuthError
-from rcon.instances import (get_available_instances, perms_to_dict, Instance,
-                            get_guild_instances, get_perms, set_player_perms,
-                            reset_player_perms, has_perms, check_perms,
-                            add_instance, is_owner, edit_instance)
+from rcon.instances import *
 
 from utils import add_empty_fields, base_embed, get_name
 
@@ -95,7 +93,24 @@ CONFIGS = {
     }
 }
 
-
+PERMISSION_LIST = {
+    'public': ['server', 'servers'],
+    'players': ['players', 'squad', 'player'],
+    'changemap': ['skip_match', 'restart_match', 'set_next_map'],
+    'cheat': ['slomo'],
+    'message': ['broadcast', 'warn', 'warn_all'],
+    'logs': ['logs', 'chat'],
+    'password': ['password'],
+    'teamchange': ['switch_team', 'switch_squad'],
+    'kick': ['kick', 'punish'],
+    'disband': ['disband_squad', 'kick_from_squad', 'demote_commander'],
+    'ban': ['ban'],
+    'config': ['player_limit', 'map_rotation'],
+    'execute': ['execute'],
+    'manage': ['alerts', 'logging'],
+    'creds': ['inst creds'],
+    'instance': ['inst connect', 'inst disconnect', 'inst config', 'permissions']
+}
 
 
 class instances(commands.Cog):
@@ -113,7 +128,7 @@ class instances(commands.Cog):
             await self.select_instance.__call__(ctx, instance_id=instance_id)
         
         else:
-            current_instance = self.bot.cache._get_selected_instance(ctx.author.id)
+            current_instance = self.bot.cache._get_selected_instance(ctx.author)
             try: embed = base_embed(current_instance)
             except:
                 embed = discord.Embed()
@@ -127,14 +142,14 @@ class instances(commands.Cog):
         embed = discord.Embed(title="Server Instances Help")
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         embed.add_field(name="Public Commands", value="```r!instance <name_or_id>\nr!instance list\nr!instance perms```", inline=False)
-        embed.add_field(name="Admin Commands", value="```r!instance perms help\nr!instance perms <user>\n\nr!instance perms <user> list\nr!instance perms <user> set <perms>\nr!instance perms <user> reset\nr!instance perms guild list\nr!instance perms guild set <perms>\n\nr!alerts [option] [value]\nr!logging [option] [value]\nr!instance config\nr!instance config <key>\nr!instance config <key> <value>\n\nr!instance add\nr!instance reconnect\nr!instance disconnect\nr!instance credentials\nr!instance delete```", inline=False)
+        embed.add_field(name="Admin Commands", value="```r!perms\nr!perms help\nr!perms (set|grant|remove|reset) (default|<role>|<user>) <perms...>\nr!alerts [option] [value]\nr!logging [option] [value]\nr!instance config\nr!instance config <key>\nr!instance config <key> <value>\n\nr!instance add\nr!instance reconnect\nr!instance disconnect\nr!instance credentials\nr!instance delete```", inline=False)
         await ctx.send(embed=embed)
 
     ### r!instance list
     @instance_command.command(name="list", description="List all available instances", usage="r!instance list", aliases=["view", "show"])
     async def list_instances(self, ctx):
-        instances = get_available_instances(ctx.author.id, ctx.guild.id)
-        current_instance = self.bot.cache._get_selected_instance(ctx.author.id)
+        instances = get_available_instances(ctx.author, ctx.guild.id)
+        current_instance = self.bot.cache._get_selected_instance(ctx.author)
         try:
             current_instance = Instance(current_instance).name
         except:
@@ -147,7 +162,7 @@ class instances(commands.Cog):
             try: self.bot.cache.instance(inst.id, by_inst_id=True)
             except: availability = "\🔴"
             else: availability = "\🟢"
-            perms = ", ".join([perm for perm, val in perms_to_dict(perms).items() if val])
+            perms = ", ".join([perm for perm, val in perms.to_dict().items() if val])
             embed.add_field(name=f"{str(i+1)} | {inst.name} {availability}", value=f"> **Perms:** {perms}")
         embed = add_empty_fields(embed)
 
@@ -155,7 +170,7 @@ class instances(commands.Cog):
     ### r!instance select <instance>
     @instance_command.command(name="select", description="Select an instance to control", usage="r!instance <instance>")
     async def select_instance(self, ctx, *, instance_id: str):
-        instances = get_available_instances(ctx.author.id, ctx.guild.id)
+        instances = get_available_instances(ctx.author, ctx.guild.id)
         inst = None
         for i, (instance, perms) in enumerate(instances):
             if str(i+1) == instance_id or instance.name.lower() == instance_id.lower():
@@ -165,7 +180,7 @@ class instances(commands.Cog):
             raise commands.BadArgument("No instance found with name or ID %s" % instance_id)
         self.bot.cache.selected_instance[ctx.author.id] = instance.id
 
-        perms = ", ".join([perm for perm, val in perms_to_dict(perms).items() if val])
+        perms = ", ".join([perm for perm, val in perms.to_dict().items() if val])
         embed = discord.Embed(title=f'Selected the "{instance.name}" instance', description=f"> **Perms:** {perms}")
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 
@@ -177,7 +192,7 @@ class instances(commands.Cog):
     @instance_command.command(name="connect", aliases=["reconnect"])
     @check_perms(instance=True)
     async def connect_instance(self, ctx):
-        instance_id = self.bot.cache._get_selected_instance(ctx.author.id)
+        instance_id = self.bot.cache._get_selected_instance(ctx.author)
         inst = Instance(instance_id)
 
         res = self.bot.cache._connect_instance(inst, return_exception=True)
@@ -188,8 +203,9 @@ class instances(commands.Cog):
             await ctx.send(embed=embed)
     ### r!instance disconnect
     @instance_command.command(name="disconnect", aliases=["shutdown"])
+    @check_perms(instance=True)
     async def disconnect_instance(self, ctx):
-        instance_id = self.bot.cache._get_selected_instance(ctx.author.id)
+        instance_id = self.bot.cache._get_selected_instance(ctx.author)
         inst = Instance(instance_id)
 
         self.bot.cache.instances[instance_id] = None
@@ -200,7 +216,7 @@ class instances(commands.Cog):
     @instance_command.command(name="delete")
     @is_owner()
     async def delete_instance(self, ctx):
-        instance_id = self.bot.cache._get_selected_instance(ctx.author.id)
+        instance_id = self.bot.cache._get_selected_instance(ctx.author)
         inst = Instance(instance_id)
 
         embed = base_embed(inst.id, title="Are you sure you want to permanently delete this instance?", description="Deleting an instance will break the connection, remove all permissions and clear all the logs. This can NOT be reverted.\n\nReact with 🗑️ to confirm and delete this instance.")
@@ -231,7 +247,7 @@ class instances(commands.Cog):
 
     ### r!instance credentials
     @instance_command.command(name="credentials", aliases=["creds", "edit"])
-    @is_owner()
+    @check_perms(creds=True)
     async def change_credentials(self, ctx):
         await self.ask_server_info(ctx, operation=1)
 
@@ -246,7 +262,7 @@ class instances(commands.Cog):
             operation = 0
         
         if operation == 1:
-            inst = Instance(self.bot.cache._get_selected_instance(ctx.author.id, ctx.guild.id))
+            inst = Instance(self.bot.cache._get_selected_instance(ctx.author, ctx.guild.id))
 
         # Create embed
         def setup_embed(question):
@@ -379,136 +395,150 @@ class instances(commands.Cog):
             return
 
 
-    ### r!instance perms [member]
-    ### r!instance perms <member> list
-    ### r!instance perms <member> <operation> <value>
-    @instance_command.group(invoke_without_command=True, name="permissions", description="Set or view RCON permissions for a user or guild", aliases=["perms"])
-    async def permissions_group(self, ctx, user: discord.Member = None, operation: str = "", value: int = None):
-        instance_id = self.bot.cache._get_selected_instance(ctx.author.id)
-        instance = Instance(instance_id)
-
-        # Limit command usage when missing permissions
-        if not has_perms(ctx, instance=True):
-            user = ctx.author
-            operation = ""
-            value = None
-
-        # Default user to message author
-        if not user:
-            user = ctx.author
-
-        # List all instances this user has access to here
-        if operation.lower() == '':
-            instances = get_available_instances(user.id, ctx.guild.id)
-
-            if instances:
-                embed = discord.Embed(title=f"Permissions in {ctx.guild.name}")
-                embed.set_author(icon_url=user.avatar_url, name=f"{user.name}#{user.discriminator}")
-
-                for i, (instance, perms) in enumerate(instances):
-                    perms = ", ".join([perm for perm, val in perms_to_dict(perms).items() if val])
-                    embed.add_field(name=f"{str(i+1)} | {instance.name}", value=f"> **Perms:** {perms}")
-                embed = add_empty_fields(embed)
-            
-            else:
-                embed = discord.Embed(title=f"Permissions in {ctx.guild.name}", description="You don't have access to any instances yet!\n\nInstances can be created by server owners, assuming they are an administrator of that guild.\n`r!instance create")
-                embed.set_author(icon_url=user.avatar_url, name=f"{user.name}#{user.discriminator}")
-
-            await ctx.send(embed=embed)
-        
-        # List user permissions for this user
-        elif operation.lower() in ['list', 'view', 'show']:
-            perms = get_perms(user.id, -1, instance_id, is_dict=False)
-            perms_dict = perms_to_dict(perms)
-            perms_str = ", ".join([perm for perm, val in perms_dict.items() if val])
-            embed = base_embed(instance.id, title=f'Permission overwrites for {user.name}#{user.discriminator}', description=f"> Current value: {str(perms)}\n> Perms: {perms_str}")
-            await ctx.send(embed=embed)
-
-        # Set user permissions for the selected instance
-        elif operation.lower() in ['set']:
-            # Update the user permissions for the selected instance
-            if value != None and int(value) >= 0 and int(value) <= 31:
-                old_perms = ", ".join([perm for perm, val in get_perms(user.id, -1, instance_id).items() if val])
-                new_perms = ", ".join([perm for perm, val in perms_to_dict(value).items() if val])
-                set_player_perms(user.id, instance_id, value)
-
-                embed = base_embed(instance.id, title=f"Changed permission overwrites for {user.name}#{user.discriminator}")
-                embed.add_field(name="Old Perms", value=f"> {old_perms}")
-                embed.add_field(name="New Perms", value=f"> {new_perms}")
-                
-                await ctx.send(embed=embed)
-                
-            # Error
-            else:
-                raise commands.BadArgument("Permissions value out of range")
-        
-        # Reset user permissions for the selected instance
-        elif operation.lower() in ['reset']:
-            reset_player_perms(user.id, instance_id)
-            embed = base_embed(instance.id, title=f"Removed permission overwrites for {user.name}#{user.discriminator}")            
-            await ctx.send(embed=embed)
-        
-
-        # Unknown operation
+    async def get_perms_object(self, ctx, object):
+        if object.lower() in ['guild', 'default']:
+            object = 'default'
+            object_type = 'default'
         else:
-            raise commands.BadArgument('Operation needs to be either "list" or "set" or "reset", not "%s"' % operation)
-    
-    ### r!instance perms guild ["list"]
-    ### r!instance perms guild set <value>
-    @permissions_group.command(name="guild", description="Set or view RCON permissions for a guild")
+            try:
+                object = await commands.UserConverter().convert(ctx, object)
+                object_type = 'user'
+            except:
+                try:
+                    object = await commands.RoleConverter().convert(ctx, object)
+                    object_type = 'role'
+                except:
+                    object = None
+                    object_type = None
+        if not object:
+            raise commands.BadArgument('Unknown permission object. Should be a user, role, or "default".')
+        return object, object_type
+
+    @commands.group(invoke_without_command=True, name="permissions", description="Set or view RCON permissions", aliases=["perms"])
     @check_perms(instance=True)
-    async def guild_permissions(self, ctx, operation: str = '', value: int = None):
-        # List guild permissions
-        if operation.lower() in ['', 'list', 'view', 'show']:
-            instances = get_guild_instances(ctx.guild.id)
+    async def permissions_group(self, ctx):
+        instance_id = self.bot.cache._get_selected_instance(ctx.author)
+        instance = Instance(instance_id)
+        embed = base_embed(instance, title='All Permissions')
+        perms = get_perms_for_instance(instance_id, ctx.guild.id)
 
-            if instances:
-                embed = discord.Embed(title="Standard guild permissions")
-                embed.set_author(icon_url=ctx.guild.icon_url, name=ctx.guild.name)
+        embed.description = f'**Default Permissions:**\n> {str(perms["default"])}'
 
-                for i, (instance, perms) in enumerate(instances):
-                    perms = ", ".join([perm for perm, val in perms_to_dict(perms).items() if val])
-                    embed.add_field(name=f"{str(i+1)} | {instance.name}", value=f"> **Perms:** {perms}")
-                embed = add_empty_fields(embed)
-            
-            else:
-                embed = discord.Embed(title="Standard guild permissions", description="There aren't any instances assigned to this guild just yet.")
-                embed.set_author(icon_url=ctx.guild.icon_url, name=ctx.guild.name)
+        if perms['roles']:
+            embed.description += '\n\n**Roles:**'
+            for role, perm in perms['roles'].items():
+                mention = ctx.guild.get_role(role)
+                mention = mention.mention if mention else role
+                embed.description += f'\n{mention}: {perm}'
 
-            await ctx.send(embed=embed)
-
-        # Set guild permissions for the selected instance
-        elif operation.lower() in ['set']:
-            instance = Instance(self.bot.cache._get_selected_instance(ctx.author.id))
-            
-            # Update the guild permissions for the selected instance
-            if value != None and int(value) >= 0 and int(value) <= 31:
-                old_value = instance.default_perms
-                instance.set_default_perms(value)
-
-                embed = base_embed(instance.id, title=f"Changed guild permissions for {ctx.guild.name}")
-                old_perms = ", ".join([perm for perm, val in perms_to_dict(old_value).items() if val])
-                new_perms = ", ".join([perm for perm, val in perms_to_dict(value).items() if val])
-                embed.add_field(name="Old Perms", value=f"> {old_perms}")
-                embed.add_field(name="New Perms", value=f"> {new_perms}")
-                
-                await ctx.send(embed=embed)
-                
-            # Error
-            else:
-                raise commands.BadArgument("Permissions value out of range")
-
-        # Unknown operation
-        else:
-            raise commands.BadArgument('Operation needs to be either "list" or "set", not "%s"' % operation)
-
-    ### r!instance perms help
-    @permissions_group.command(name="help")
-    async def permissions_help(self, ctx):
-        embed = discord.Embed(title="Permission Values", description="Each of my commands require permission. Instance Managers can change who can use what command by setting permission values for users or even entire guilds (Discord servers).\n\nCurrently, there are 5 different types of permissions. Each of them represent a number, which is the square of the previous one. A list of all permissions can be seen here:```1 - Public commands\n2 - Game logs\n4 - Moderation commands\n8 - Administration commands\n16 - Instance management```\nIf you sum all of the values of the permissions you want together, you'll get the permissions value. For instance, permissions for public commands tied with moderation commands would give a permissions value of 1 + 4 = 5.\n\n**User-Specific Permissions**\nUser permissions grant a single user permission to use the commands belonging to that value. They can use these in every Discord guild this bot is in, as long as they have Administrator permissions in that guild. Every action is still logged.\n\n**Guild-Specific Permissions**\nGuild permissions grant every single member of that Discord guild permission to use the commands belonging to that value. However, these permissions are overwritten by user permissions and will then no longer apply to that user.")
-        embed.add_field(name="Permission Commands", value="```r!instance perms [user]\nr!instance perms help\nr!instance perms <user> list\nr!instance perms <user> set <perms>\nr!instance perms <user> reset\nr!instance perms guild list\nr!instance perms guild set <perm> (0|1)```")
+        if perms['users']:
+            embed.description += '\n\n**Users:**'
+            for user, perm in perms['users'].items():
+                mention = ctx.bot.get_user(user)
+                mention = mention.mention if mention else user
+                embed.description += f'\n{mention}: {perm}'
+        
         await ctx.send(embed=embed)
 
+    @permissions_group.command(name='set', aliases=[])
+    @check_perms(instance=True)
+    async def set_permissions(self, ctx, object, *, perms):
+        object, object_type = await self.get_perms_object(ctx, object)
+        perms = Permissions(**{p: True for p in re.split(', |,\n|,| |\n', perms)})
+        instance_id = ctx.bot.cache._get_selected_instance(ctx.author)
+        instance = Instance(instance_id)
+        embed = base_embed(instance)
+        
+        if object_type == 'default':
+            old_perms = Permissions.from_int(instance.default_perms)
+            instance.set_default_perms(int(perms))
+            embed.title = "Updated default permissions"
+        else:
+            old_perms = get_perms_entry(instance_id, object.id)
+            set_perms(object.id, instance_id, int(perms), object_type)
+            embed.title = f"Updated permissions for {object_type} {object.name}"
+
+        embed.add_field(name='Old permissions', value=f'> {old_perms}')
+        embed.add_field(name='New permissions', value=f'> {perms}')
+        await ctx.send(embed=embed)
+
+    @permissions_group.command(name='grant', aliases=['add'])
+    @check_perms(instance=True)
+    async def grant_permissions(self, ctx, object, *, perms):
+        object, object_type = await self.get_perms_object(ctx, object)
+        perms = Permissions(**{p: True for p in re.split(', |,\n|,| |\n', perms)})
+        instance_id = ctx.bot.cache._get_selected_instance(ctx.author)
+        instance = Instance(instance_id)
+        embed = base_embed(instance)
+
+        if object_type == 'default':
+            old_perms = Permissions.from_int(instance.default_perms)
+            new_perms = old_perms + perms
+            instance.set_default_perms(int(new_perms))
+            embed.title = "Updated default permissions"
+        else:
+            old_perms = get_perms_entry(instance_id, object.id)
+            new_perms = old_perms + perms if old_perms else perms
+            set_perms(object.id, instance_id, int(new_perms), object_type)
+            embed.title = f"Updated permissions for {object_type} {object.name}"
+
+        embed.add_field(name='Old permissions', value=f'> {old_perms}')
+        embed.add_field(name='New permissions', value=f'> {new_perms}')
+        await ctx.send(embed=embed)
+    
+    @permissions_group.command(name='revoke', aliases=['remove'])
+    @check_perms(instance=True)
+    async def revoke_permissions(self, ctx, object, *, perms):
+        object, object_type = await self.get_perms_object(ctx, object)
+        perms = Permissions(**{p: True for p in re.split(', |,\n|,| |\n', perms)})
+        instance_id = ctx.bot.cache._get_selected_instance(ctx.author)
+        instance = Instance(instance_id)
+        embed = base_embed(instance)
+
+        if object_type == 'default':
+            old_perms = Permissions.from_int(instance.default_perms)
+            new_perms = old_perms - perms
+            instance.set_default_perms(int(new_perms))
+            embed.title = "Updated default permissions"
+        else:
+            old_perms = get_perms_entry(instance_id, object.id)
+            new_perms = old_perms - perms if old_perms else Permissions()
+            set_perms(object.id, instance_id, int(new_perms), object_type)
+            embed.title = f"Updated permissions for {object_type} {object.name}"
+
+        embed.add_field(name='Old permissions', value=f'> {old_perms}')
+        embed.add_field(name='New permissions', value=f'> {new_perms}')
+        await ctx.send(embed=embed)
+        
+    @permissions_group.command(name='reset', aliases=['delete'])
+    @check_perms(instance=True)
+    async def reset_permissions(self, ctx, object):
+        object, object_type = await self.get_perms_object(ctx, object)
+        instance_id = ctx.bot.cache._get_selected_instance(ctx.author)
+        instance = Instance(instance_id)
+        embed = base_embed(instance)
+        new_perms = None
+
+        if object_type == 'default':
+            old_perms = Permissions.from_int(instance.default_perms)
+            instance.set_default_perms(int(new_perms))
+            embed.title = "Removed default permissions"
+        else:
+            old_perms = get_perms_entry(instance_id, object.id)
+            reset_perms(object.id, instance_id)
+            embed.title = f"Removed permissions for {object_type} {object.name}"
+
+        embed.add_field(name='Old permissions', value=f'> {old_perms}')
+        embed.add_field(name='New permissions', value=f'> {new_perms}')
+        await ctx.send(embed=embed)
+        
+    @permissions_group.command(name='help', aliases=['info', 'list'])
+    @check_perms(instance=True)
+    async def permissions_help(self, ctx):
+        embed = discord.Embed(title='Permissions')
+        embed.description = f'By default, everyone in the Discord server will be given the default permissions. These can be overwritten by permissions linked to roles. If a user has multiple roles with permissions linked, the top role will count. These permissions can then be overwritten on a per-user basis. Permissions don\'t stack. The instance owner will always have all permissions.\n\n`{ctx.prefix}perms (set|grant|remove|reset) (default|<role>|<user>) <perms...>`'
+        embed.add_field(name='List of permissions', value='\n'.join([f'`{k}` - {ctx.prefix}{(", "+ctx.prefix).join(v)}' for k, v in PERMISSION_LIST.items()]))
+        await ctx.send(embed=embed)
 
 
     ### r!instance config
@@ -517,7 +547,7 @@ class instances(commands.Cog):
     @instance_command.command(name="config")
     @check_perms(instance=True)
     async def instance_config(self, ctx, key: str = None, value = None):
-        instance_id = self.bot.cache._get_selected_instance(ctx.author.id)
+        instance_id = self.bot.cache._get_selected_instance(ctx.author)
         instance = Instance(instance_id)
         if key: key = key.lower()
 
@@ -564,7 +594,7 @@ class instances(commands.Cog):
 
     ### r!alerts [option] [value]
     @commands.command(description="Configure the chat alerts feature", usage="r!alerts [option] [value]", aliases=["triggers"])
-    @check_perms(instance=True)
+    @check_perms(manage=True)
     async def alerts(self, ctx, option: str = None, value = None):
         CONFIG_KEY = "chat_trigger_"
         CONFIG_TITLE = "Chat Alerts"
@@ -572,7 +602,7 @@ class instances(commands.Cog):
 
     ### r!logging [option] [value]
     @commands.command(description="Configure the logging channels", usage="r!alerts [option] [value]", aliases=["channels", "log_channels", "logchannels"])
-    @check_perms(instance=True)
+    @check_perms(manage=True)
     async def logging(self, ctx, option: str = None, value = None):
         CONFIG_KEY = "channel_log_"
         CONFIG_TITLE = "Logging Channels"
@@ -581,7 +611,7 @@ class instances(commands.Cog):
 
 
     async def config_menu(self, ctx, config_title, config_key, option: str = None, value = None):
-        inst_id = self.bot.cache._get_selected_instance(ctx.author.id, ctx.channel.id)
+        inst_id = self.bot.cache._get_selected_instance(ctx.author, ctx.channel.id)
         inst = Instance(inst_id)
         CONFIG_KEY = str(config_key)
         CONFIG_TITLE = str(config_title)
