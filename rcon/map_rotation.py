@@ -77,6 +77,12 @@ class MapRotation:
 
         return self.next_map
         
+    def validate_next_map(self):
+        if not self.next_map.validate(len(self.players)):
+            logging.warning('Inst %s: MAPROT: %s failed to validate. Changing map...', self.id, self.next_map)
+            self.next_map = self._get_next_map()
+            if self.next_map:
+                self.rcon.set_next_map(str(self.next_map))
 
 
 class Pool:

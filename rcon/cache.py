@@ -188,6 +188,8 @@ class ServerInstance(MapRotation):
             if not self.is_transitioning:
                 self._parse_players()
                 self._parse_squads()
+                if self.map_rotation and self.next_map:
+                    self.validate_next_map()
             else:
                 logging.info('Inst %s: Map is transitioning', self.id)
             self.last_updated = datetime.now()
@@ -325,12 +327,6 @@ class ServerInstance(MapRotation):
         
         if self.current_map != current_map: self.current_map = current_map
         if self.next_map != next_map: self.next_map = next_map
-
-        if self.map_rotation and self.next_map and not self.is_transitioning and not self.next_map.validate(len(self.players)):
-            logging.warning('Inst %s: MAPROT: %s failed to validate. Changing map...', self.id, self.next_map)
-            self.next_map = self._get_next_map()
-            if self.next_map:
-                self.rcon.set_next_map(str(self.next_map))
         
     def _parse_squads(self):
         res = self.rcon.list_squads()
