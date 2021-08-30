@@ -148,8 +148,9 @@ class public(commands.Cog):
                 break
         if not squad: raise commands.BadArgument('No squad was found with the given squad id')
 
-        creator = inst.get_player(squad.creator)
+        creator = squad.creator_name if squad.creator_name else inst.get_player(squad.creator)
         if not creator: creator = str(squad.creator)
+        else: creator = f'{creator} ({squad.creator})'
 
         embed = base_embed(inst.id, title=squad.name, description=f"> Size: {str(len(squad))}\n> Squad ID: {str(squad_id)}\n> Team: {team.faction}\n> Created by: {creator}")
 

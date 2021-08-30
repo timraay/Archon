@@ -344,6 +344,10 @@ class ServerInstance(MapRotation):
         ID: 1 | Name: Infantry | Size: 6 | Locked: False
         ID: 2 | Name: HEAVY MG | Size: 2 | Locked: False
 
+        Or possibly:
+
+        ID: 1 | Name: Squad 1 | Size: 9 | Locked: False | Creator Name: HunterChillz | Creator Steam ID: 76561199130883877
+
 
         This is what the default squad names look like:
 
@@ -363,7 +367,8 @@ class ServerInstance(MapRotation):
                 
             elif line.startswith("ID"):
                 try:
-                    re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False)', line).groups()
+                    try: re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False) \| Creator Name: (.*) \| Creator Steam ID: (\d{17})', line).groups()
+                    except: re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False)', line).groups()
                 except:
                     logging.error('Inst %s: Failed to parse squad line: %s', self.id, line)
                 else:
@@ -371,10 +376,12 @@ class ServerInstance(MapRotation):
                     name = str(re_res[1])
                     size = int(re_res[2])
                     player_ids = [player.steam_id for player in self.select(team_id=team_id, squad_id=squad_id)]
-                    locked = True if re_res[3] == "True" else False
+                    locked = True if re_res[3] == "True" else False                    
+                    creator_name = str(re_res[4]) if len(re_res) > 4 else None
+                    creator_steam_id = int(re_res[5]) if len(re_res) > 4 else None
 
-                    if team_id == 1: self.team1.set_squad(squad_id, name, player_ids, locked)
-                    elif team_id == 2: self.team2.set_squad(squad_id, name, player_ids, locked)
+                    if team_id == 1: self.team1.set_squad(squad_id, name, player_ids, locked, creator_name, creator_steam_id)
+                    elif team_id == 2: self.team2.set_squad(squad_id, name, player_ids, locked, creator_name, creator_steam_id)
             
         self.team1.unassigned = [player.steam_id for player in self.select(team_id=1, squad_id=-1)]
         self.team2.unassigned = [player.steam_id for player in self.select(team_id=2, squad_id=-1)]
@@ -427,7 +434,7 @@ class Team():
     def __len__(self):
         return sum([len(squad) for squad in self.squads]) + len(self.unassigned)
 
-    def set_squad(self, id: int, name: str, player_ids: list, locked: bool):
+    def set_squad(self, id: int, name: str, player_ids: list, locked: bool, creator_name: str, creator_steam_id: int):
         squad = None
         for i, squad in enumerate(self.squads):
             if squad.id == id:
@@ -437,7 +444,7 @@ class Team():
         if squad: # There is a squad with this ID
             squad = squad[0]
             if squad.name != name: # The previous squad was replaced
-                self.squads[i] = Squad(id, name, player_ids, locked)
+                self.squads[i] = Squad(id, name, player_ids, locked, creator_name, creator_steam_id)
             else: # This squad already existed before
                 self.squads[i].update(player_ids, locked)
         else: # This is a new squad
@@ -445,12 +452,13 @@ class Team():
             self.squads.append(squad)
 
 class Squad():
-    def __init__(self, id: int, name: str, player_ids: list, locked: bool):
+    def __init__(self, id: int, name: str, player_ids: list, locked: bool, creator_name: str = None, creator_steam_id: str = None):
         self.id = id
         self.name = name
         self.player_ids = player_ids
         self.locked = locked
-        self.creator = self.player_ids[0]
+        self.creator = creator_steam_id if creator_steam_id else self.player_ids[0]
+        self.creator_name = creator_name
         """
         self.type = None
         self._possible_types = [key for key in SQUAD_PLAYER_LIMITS.keys()]
