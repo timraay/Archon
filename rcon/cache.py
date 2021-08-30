@@ -98,7 +98,7 @@ class Cache():
 
     def instance(self, user, guild=None, by_inst_id=False):
         if by_inst_id:
-            instance_id = user.id
+            instance_id = user
         else:
             guild = self._get_guild_id(guild)
             instance_id = self._get_selected_instance(user, guild)
