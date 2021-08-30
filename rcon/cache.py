@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils import get_player_input_type
 import difflib
 import os
@@ -194,7 +194,9 @@ class ServerInstance(MapRotation):
                 logging.info('Inst %s: Map is transitioning', self.id)
             self.last_updated = datetime.now()
         except RconAuthError as e:
-            self = None
+            if (datetime.now() - timedelta(minutes=5)) > self.last_updated:
+                logging.error('Inst %s: Failed to connect for 5 minutes, disconnecting...', self.id)
+                self = None
             raise ConnectionLost("Lost connection to RCON: " + str(e))
         
         return self

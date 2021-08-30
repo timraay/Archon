@@ -1,12 +1,13 @@
 import discord
 from discord.ext import commands, tasks
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 from rcon.commands import Rcon
 from rcon.instances import check_perms, Instance
 from rcon.logs import ServerLogs, format_log
-from rcon.connection import RconError
+from rcon.connection import RconAuthError, RconError
+from rcon.cache import ConnectionLost
 
 import logging
 
@@ -295,6 +296,8 @@ class logs(commands.Cog):
                     self.last_seen_id[inst.id] = new_max_id
                 except Exception as e:
                     logging.exception('Inst %s: Unhandled exception whilst updating: %s: %s', inst.id, e.__class__.__name__, e)
+                    if isinstance(e, (RconAuthError, ConnectionLost)) and (datetime.now() - timedelta(minutes=5)) > self.last_updated:
+                        self.bot.cache.instances[inst.id] = None
 
 
     @check_server.before_loop
