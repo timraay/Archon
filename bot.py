@@ -152,7 +152,11 @@ logging.info('Launching bot...')
 
 # Initialize cache
 from rcon.cache import Cache
-bot.cache = Cache()
+try:
+    bot.cache = Cache()
+except:
+    logging.fatal('Failed to build the cache')
+    raise
 
 # Run the bot
 with open("token.txt", "r") as f:
