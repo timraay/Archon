@@ -106,7 +106,7 @@ def add_instance(name: str, address: str, port: int, password: str, owner_id: in
     instance_id = instance_id + 1 if isinstance(instance_id, int) else 0
     # Now we have all parameters we can add the instance to the database.
     cur.execute('INSERT INTO instances VALUES (?,?,?,?,?,?,?,?,?)', (instance_id, name, address, port, password, owner_id, game, default_perms, uses_custom_rotation))
-    cur.execute(f'INSERT INTO permissions VALUES (?,?,?)', (instance_id, owner_id, 31))
+    cur.execute(f'INSERT INTO permissions VALUES (?,?,?,?)', (instance_id, owner_id, 31, 'user'))
     _insert_config_row(instance_id)
     db.commit()
 
