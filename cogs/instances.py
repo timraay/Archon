@@ -641,7 +641,7 @@ class instances(commands.Cog):
                 if k.startswith(CONFIG_KEY):
                     try: option_info = CONFIGS[k]
                     except KeyError: continue
-                    value = inst.config[k] if inst.config[k] else "None"
+                    value = v if v else "None"
                     embed.add_option(option_info["emoji"], title=option_info['name'], description=f"ID: {k.replace(CONFIG_KEY, '')}\nValue: `{value}`\n\n*{option_info['short_desc']}*")
 
             reaction = await embed.run(ctx)
@@ -667,12 +667,12 @@ class instances(commands.Cog):
                     old_value, value = update_value(option, value)
 
                     embed = base_embed(inst, title=f'Updated {CONFIGS[key]["name"]}')
-                    embed.add_field(name="Old Value", value=str(old_value))
-                    embed.add_field(name="New value", value=str(value))
+                    embed.add_field(name="Old Value", value=str(old_value) if old_value else 'None')
+                    embed.add_field(name="New value", value=str(value) if value else 'None')
                     await ctx.send(embed=embed)
 
         elif value == None:
-            embed = base_embed(inst, title=f'Chat Alerts: {option}', description=f"> **Current value:**\n> {inst.config[key]}")
+            embed = base_embed(inst, title=f'Chat Alerts: {option}', description=f"> **Current value:**\n> {inst.config[key] if inst.config[key] else 'None'}")
             desc = CONFIGS[key]['long_desc'] if key in CONFIGS.keys() and CONFIGS[key]['long_desc'] else f"**{key}**\nNo description found."
             embed.description = embed.description + "\n\n" + desc
             await ctx.send(embed=embed)
@@ -681,8 +681,8 @@ class instances(commands.Cog):
             old_value, value = update_value(option, value)
 
             embed = base_embed(inst, title=f'Updated {CONFIGS[key]["name"]}')
-            embed.add_field(name="Old Value", value=str(old_value) if str(old_value) else 'Unknown')
-            embed.add_field(name="New value", value=str(value) if str(value) else 'Unknown')
+            embed.add_field(name="Old Value", value=str(old_value) if old_value else 'None')
+            embed.add_field(name="New value", value=str(value) if value else 'None')
             await ctx.send(embed=embed)
 
 def setup(bot):
