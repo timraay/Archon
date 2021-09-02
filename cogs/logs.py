@@ -254,7 +254,7 @@ class logs(commands.Cog):
                                 embed.color = discord.Color.teal()
                                 embed.title = log['message']
                                 embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
-                                await channel_match.send(embed=embed)
+                                await channel_rcon.send(embed=embed)
                         if channel_joins:
                             default_embed = base_embed(inst.id)
                             logs = [log for log in new_logs if log['category'] == 'joins']
@@ -291,7 +291,7 @@ class logs(commands.Cog):
 
                                 embed.color = discord.Color.dark_red()
                                 embed.description = "\n".join([log['message'] for log in logs])
-                                await channel_match.send(embed=embed)
+                                await channel_teamkills.send(embed=embed)
 
                     self.last_seen_id[inst.id] = new_max_id
                 except Exception as e:
