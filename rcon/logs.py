@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime
 from io import StringIO
+from itertools import count
 
 db = sqlite3.connect("instances.db")
 cur = db.cursor()
@@ -61,12 +62,14 @@ class ServerLogs:
         time = datetime.now()
         timestamp = str(time)
 
-        for message in messages:
-            log_id += 1
-            cur.execute('INSERT INTO logs VALUES (?,?,?,?,?)', (self.id, log_id, category, message, timestamp))
-            #print(f"[{time.strftime('%H:%M')}] [{category.upper()}] {message}")
-        delete_old_logs()
+        q = f'INSERT INTO logs VALUES {",".join(["(?,?,?,?,?)"]*len(messages))}'
+        id_count = count(log_id+1)
+        params = [(self.id, next(id_count), category, message, timestamp) for message in messages]
+        params = list(sum(params, ())) # Flatten
+        cur.execute(q, params)
         db.commit()
+
+        delete_old_logs()
     
     def export(self):
         f = StringIO()
