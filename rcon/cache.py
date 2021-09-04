@@ -443,12 +443,12 @@ class Team():
         
         if squad: # There is a squad with this ID
             squad = squad[0]
-            if squad.name != name: # The previous squad was replaced
+            if squad.name != name or squad.creator_steam_id != creator_steam_id: # The previous squad was replaced
                 self.squads[i] = Squad(id, name, player_ids, locked, creator_name, creator_steam_id)
             else: # This squad already existed before
                 self.squads[i].update(player_ids, locked)
         else: # This is a new squad
-            squad = Squad(id, name, player_ids, locked)
+            squad = Squad(id, name, player_ids, locked, creator_name, creator_steam_id)
             self.squads.append(squad)
 
 class Squad():
