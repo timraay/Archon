@@ -56,7 +56,7 @@ class logs(commands.Cog):
         output = "```json\n" + output + "```"
         await ctx.send(output)
     
-    @commands.command(description="Read all chat messages", usage="r!logs ([category]|export)")
+    @commands.command(description="Read and export logs", usage="r!logs [(<category>|export)]")
     @check_perms(logs=True)
     async def logs(self, ctx, category: str = None):
         
