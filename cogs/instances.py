@@ -372,8 +372,12 @@ class instances(commands.Cog):
                 if confirmation == "✅":
                     msg = await ctx.author.send("Trying to establish a connection...")
                     try:
-                        if operation == 0: inst = add_instance(game=values[0], address=values[1], port=values[2], password=values[3], name=values[4], owner_id=ctx.author.id)
-                        elif operation == 1: inst = edit_instance(inst.id, game=values[0], address=values[1], port=values[2], password=values[3], name=values[4])
+                        if operation == 0:
+                            inst = add_instance(game=values[0], address=values[1], port=values[2], password=values[3], name=values[4], owner_id=ctx.author.id)
+                            inst.config['guild_id'] = ctx.guild.id
+                            inst.store_config()
+                        elif operation == 1:
+                            inst = edit_instance(inst.id, game=values[0], address=values[1], port=values[2], password=values[3], name=values[4])
                     except RconAuthError as e:
                         await ctx.author.send(f"Unable to connect to the server: {str(e)}")
                         await asyncio.sleep(3)
