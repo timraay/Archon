@@ -355,17 +355,19 @@ class ServerInstance(MapRotation):
         """
 
         lines = res.split("\n")
+        team_id = None
 
         for line in lines:
             if line.startswith("Team ID"):
-                re_res = re.search(r'Team ID: ([12]) \((.*)\)', line).groups()
+                try: re_res = re.search(r'Team ID: ([12]) \((.*)\)', line).groups()
+                except: continue
                 team_id = int(re_res[0])
                 team_faction = str(re_res[1])
                 # TODO: Currently the team info gets replaced without comparing old to new.
                 if team_id == 1: self.team1 = Team(team_id, team_faction)
                 elif team_id == 2: self.team2 = Team(team_id, team_faction)
                 
-            elif line.startswith("ID"):
+            elif line.startswith("ID") and team_id:
                 try:
                     try: re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False) \| Creator Name: (.*) \| Creator Steam ID: (\d{17})', line).groups()
                     except: re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False)', line).groups()
