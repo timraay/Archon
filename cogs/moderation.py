@@ -302,7 +302,8 @@ class moderation(commands.Cog):
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} change next layer {layer_name}')
 
-    @commands.command(description="Change the current layer (Squad Only)", usage="r!change_layer [layer name]")
+    @commands.command(description="Change the current layer (Squad Only)", usage="r!change_current_layer [layer name]",
+                      aliases=["change_layer"])
     @check_perms(changemap=True)
     @is_game(game=['squad'])
     async def change_current_layer(self, ctx, *, layer_name: str):
