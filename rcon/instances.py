@@ -78,8 +78,6 @@ If you sum the ints of the permissions you want to assign you get the permission
 
 
 
-
-
 db = sqlite3.connect('instances.db')
 cur = db.cursor()
 cur.execute('CREATE TABLE IF NOT EXISTS instances(instance_id INT NOT NULL, name TEXT, address TEXT, port INT, password TEXT, owner_id INT, game TEXT, default_perms INT, uses_custom_rotation INT, PRIMARY KEY (instance_id))')
@@ -146,14 +144,15 @@ def get_guild_instances(guild_id: int):
 
 # Wrappers
 def is_game(game):
+
     async def predicate(ctx):
-        game = list(game)
         instance = Instance(ctx.bot.cache._get_selected_instance(ctx.author, ctx.guild.id))
         if instance.game not in game:
             await ctx.send(f":no_entry_sign: Invalid instance!\n`This command only works for %s servers`" % ", ".join(game).upper())
             return False
         return True
     return commands.check(predicate)
+
 def is_owner():
     async def predicate(ctx):
         cur.execute('SELECT instance_id FROM instances WHERE instance_id = ? AND owner_id = ?', (ctx.bot.cache._get_selected_instance(ctx.author, ctx.guild.id), ctx.author.id))
