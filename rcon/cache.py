@@ -194,7 +194,7 @@ class ServerInstance(MapRotation):
                 logging.info('Inst %s: Map is transitioning', self.id)
             self.last_updated = datetime.now()
         except RconAuthError as e:
-            if (datetime.now() - timedelta(minutes=5)) > self.last_updated:
+            if (datetime.now() - timedelta(minutes=30)) > self.last_updated:
                 logging.error('Inst %s: Failed to connect for 5 minutes, disconnecting...', self.id)
                 self = None
             raise ConnectionLost("Lost connection to RCON: " + str(e))

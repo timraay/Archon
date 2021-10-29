@@ -297,7 +297,7 @@ class logs(commands.Cog):
                         self.last_seen_id[inst.id] = new_max_id
                     except Exception as e:
                         logging.exception('Inst %s: Unhandled exception whilst updating: %s: %s', inst.id, e.__class__.__name__, e)
-                        if isinstance(e, (RconAuthError, ConnectionLost)) and (datetime.now() - timedelta(minutes=5)) > inst.last_updated:
+                        if isinstance(e, (RconAuthError, ConnectionLost)) and (datetime.now() - timedelta(minutes=30)) > inst.last_updated:
                             self.bot.cache.instances[inst.id] = None
         except Exception as e:
             logging.critical('Unhandled exception in instance update cycle: %s: %s', e.__class__.__name__, e)
