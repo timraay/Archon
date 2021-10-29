@@ -4,7 +4,7 @@ import json
 from ast import literal_eval
 
 from rcon.commands import Rcon, RconCommandError
-from rcon.instances import check_perms, is_game
+from rcon.instances import check_perms, is_game, Instance
 from rcon.logs import ServerLogs
 from rcon.map_rotation import Map
 
@@ -248,13 +248,20 @@ class moderation(commands.Cog):
                                 f'{ctx.author.name}#{ctx.author.discriminator} team-switched {", ".join([player.name for player in players])} for "{reason}"')
 
     @commands.command(description="Go to the next match", usage="r!skip_match [map name]",
-                      aliases=["skip", "skip_map", "end_match", "end_map", "change_map", "switch_map"])
+                      aliases=["skip", "skip_map", "end_match", "end_map", "change_map", "switch_map", "change_layer",
+                               "change_current_layer"])
     @check_perms(changemap=True)
-    @is_game(game=['ps', 'btw'])
     async def skip_match(self, ctx, *, map_name: str = ""):
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
+
+        instance_details = Instance(ctx.bot.cache._get_selected_instance(ctx.author, ctx.guild.id))
+
         if map_name:
-            res = inst.rcon.switch_to_map(map_name)
+            # check current game for instance select - squad uses another command
+            if instance_details.game == 'squad':
+                res = inst.rcon.change_layer(map_name)
+            else:
+                res = inst.rcon.set_next_map(map_name)
         else:
             res = inst.rcon.end_match()
 
@@ -275,45 +282,23 @@ class moderation(commands.Cog):
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} restarted the current match')
 
     @commands.command(description="Set the next map", usage="r!set_next_map [map name]",
-                      aliases=["next", "next_map", "queue", "queue_map", "view_map"])
+                      aliases=["next", "next_map", "queue", "queue_map", "view_map", "next_layer", "set_next_layer"])
     @check_perms(changemap=True)
-    @is_game(game=['ps', 'btw'])
     async def set_next_map(self, ctx, *, map_name: str):
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.set_next_map(map_name)
+        instance_details = Instance(ctx.bot.cache._get_selected_instance(ctx.author, ctx.guild.id))
+
+        # check current game for instance select - squad uses another command
+        if instance_details.game == 'squad':
+            res = inst.rcon.set_next_layer(map_name)
+        else:
+            res = inst.rcon.set_next_map(map_name)
         inst.next_map = Map(map_name)
 
         embed = base_embed(self.bot.cache.instance(ctx.author, ctx.guild.id).id, title="Queued the next map",
                            description=res)
         await ctx.send(embed=embed)
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} queued {map_name}')
-
-    @commands.command(description="Set the next layer (Squad Only)", usage="r!set_next_layer [layer name]",
-                      aliases=["next_layer",
-                               "queue_layer"])
-    @check_perms(changemap=True)
-    @is_game(game=['squad'])
-    async def set_next_layer(self, ctx, *, layer_name: str):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.set_next_layer(layer_name)
-
-        embed = base_embed(self.bot.cache.instance(ctx.author, ctx.guild.id).id, title="Queued the next layer",
-                           description=res)
-        await ctx.send(embed=embed)
-        ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} change next layer {layer_name}')
-
-    @commands.command(description="Change the current layer (Squad Only)", usage="r!change_current_layer [layer name]",
-                      aliases=["change_layer"])
-    @check_perms(changemap=True)
-    @is_game(game=['squad'])
-    async def change_current_layer(self, ctx, *, layer_name: str):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.change_layer(layer_name)
-
-        embed = base_embed(self.bot.cache.instance(ctx.author, ctx.guild.id).id, title="Current Layer Change",
-                           description=res)
-        await ctx.send(embed=embed)
-        ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} change next layer {layer_name}')
 
 
 def setup(bot):
