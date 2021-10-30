@@ -122,6 +122,17 @@ class Rcon(RconConnection):
         res = self._res_to_str(res)
         return res
 
+    def set_next_layer(self, layer_name: str):
+        res = self.exec_command(f"AdminSetNextLayer {layer_name}")
+        res = self._res_to_str(res)
+        return res
+
+    def change_layer(self, layer_name: str):
+        res = self.exec_command(f"AdminChangeLayer {layer_name}")
+        res = self._res_to_str(res)
+        return res
+
+
     # ADMINISTRATION
     def set_max_player_limit(self, limit: str):
         res = self.exec_command(f"AdminSetMaxNumPlayers")
