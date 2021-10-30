@@ -195,7 +195,7 @@ class instances(commands.Cog):
         instance_id = self.bot.cache._get_selected_instance(ctx.author)
         inst = Instance(instance_id)
 
-        res = self.bot.cache._connect_instance(inst, return_exception=True)
+        res = await self.bot.cache._connect_instance(inst, return_exception=True)
         if isinstance(res, Exception): # Instance could not be connected
             raise res
         else: # Instance was successfully connected
@@ -388,7 +388,7 @@ class instances(commands.Cog):
                         confirmation = ""
                     else:
                         await msg.edit(content="Connection established!")
-                        self.bot.cache._connect_instance(inst)
+                        await self.bot.cache._connect_instance(inst)
                         embed = base_embed(inst.id, description="You can now customize your instance further by setting permissions and changing config options. See `r!inst help` for more information.", color=discord.Color.green())
                         if operation == 0: embed.title = "Instance created!"
                         elif operation == 1: embed.title = "Instance edited!"

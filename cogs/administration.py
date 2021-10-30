@@ -24,7 +24,7 @@ class administration(commands.Cog):
     @check_perms(execute=True)
     async def execute(self, ctx, *, cmd):
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.exec_command(cmd)
+        res = await inst.rcon.exec_command(cmd)
         res = literal_eval(res)
         if not res: # An empty list was received
             res = "Empty response received"
@@ -43,7 +43,7 @@ class administration(commands.Cog):
     @check_perms(config=True)
     async def player_limit(self, ctx, limit: int):
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.set_max_player_limit(limit)
+        res = await inst.rcon.set_max_player_limit(limit)
 
         embed = base_embed(inst.id, title="Max player limit changed", description=res)
         await ctx.send(embed=embed)
@@ -52,7 +52,7 @@ class administration(commands.Cog):
     @check_perms(password=True)
     async def password(self, ctx, password: str = ""):
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.set_password(password)
+        res = await inst.rcon.set_password(password)
 
         embed = base_embed(inst.id, title="Password updated", description=res)
         await ctx.send(embed=embed)
@@ -67,7 +67,7 @@ class administration(commands.Cog):
             raise commands.BadArgument('%s needs to be a percentage' % percentage)
 
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.set_clockspeed(percentage)
+        res = await inst.rcon.set_clockspeed(percentage)
 
         embed = base_embed(inst.id, title="Server clockspeed adjusted", description=res)
         await ctx.send(embed=embed)

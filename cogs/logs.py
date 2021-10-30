@@ -91,9 +91,9 @@ class logs(commands.Cog):
         # We can use this opportunity to update the cache,
         # though we don't want to overdo this.
         if (datetime.now() - inst.last_updated).total_seconds() > SECONDS_BETWEEN_CACHE_REFRESH:
-            inst.update()
+            await inst.update()
         else:
-            inst.rcon.exec_command("a")
+            await inst.rcon.exec_command("a")
 
         # Grab all the new chat messages
         new_chat_messages = inst.rcon.get_player_chat()
@@ -174,7 +174,7 @@ class logs(commands.Cog):
                             
                             if cooldown > 0:
                                 # The player tried sending admin reports too fast and is still in cooldown
-                                inst.rcon.warn(player.steam_id, f"You're sending reports too fast! Please wait {str(cooldown)}s and try again.")
+                                await inst.rcon.warn(player.steam_id, f"You're sending reports too fast! Please wait {str(cooldown)}s and try again.")
                                 description = f"{name}: {discord.utils.escape_markdown(text)}"
                                 embed = base_embed(inst.id, description=description)
                                 embed.set_footer(text=f"Cooldown was active for this player ({str(cooldown)}s). He was asked to try again.")
@@ -182,7 +182,7 @@ class logs(commands.Cog):
 
                             elif len(text.split()) < 3 and config["chat_trigger_require_reason"]:
                                 # The player didn't include a reason, which is required
-                                inst.rcon.warn(player.steam_id, f"Please include a reason in your '{word}' report and try again.")
+                                await inst.rcon.warn(player.steam_id, f"Please include a reason in your '{word}' report and try again.")
                                 description = f"{name}: {discord.utils.escape_markdown(text)}"
                                 embed = base_embed(inst.id, description=description)
                                 embed.set_footer(text="No reason was included in this report. The player was asked to try again.")
@@ -195,7 +195,7 @@ class logs(commands.Cog):
                                 if player: embed.set_footer(text="Team ID: %s • Squad ID: %s • Player ID: %s" % (player.team_id, player.squad_id, player.player_id))
                                 await trigger_channel.send(trigger_mentions, embed=embed)
                                 if config['chat_trigger_confirmation']:
-                                    inst.rcon.warn(player.steam_id, config['chat_trigger_confirmation'])
+                                    await inst.rcon.warn(player.steam_id, config['chat_trigger_confirmation'])
                             
                             break
                 

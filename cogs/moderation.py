@@ -23,11 +23,11 @@ class moderation(commands.Cog):
                       aliases=["warn_player", "message", "msg"])
     @check_perms(message=True)
     async def warn(self, ctx, name_or_id: str, *, reason: str):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
-        res = inst.rcon.warn(player.steam_id, reason)
+        res = await inst.rcon.warn(player.steam_id, reason)
 
         embed = base_embed(inst.id, title="Player warned", description=res)
         await ctx.send(embed=embed)
@@ -38,11 +38,11 @@ class moderation(commands.Cog):
                       aliases=["warn_players", "message_all", "msg_all"])
     @check_perms(message=True)
     async def warn_all(self, ctx, *, reason: str):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         amount = 0
         for player in inst.players:
             try:
-                inst.rcon.warn(player.steam_id, reason)
+                await inst.rcon.warn(player.steam_id, reason)
             except:
                 pass
             else:
@@ -58,15 +58,15 @@ class moderation(commands.Cog):
                       aliases=["punish_player", "kill", "kill_player"])
     @check_perms(kick=True)
     async def punish(self, ctx, name_or_id: str, *, reason: str = None):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
-        inst.rcon.change_team(player.steam_id)
-        inst.rcon.change_team(player.steam_id)
+        await inst.rcon.change_team(player.steam_id)
+        await inst.rcon.change_team(player.steam_id)
         warn_reason = "You were killed by an Admin."
         if reason: warn_reason = warn_reason + " Reason: " + reason
-        res = inst.rcon.warn(player.steam_id, warn_reason)
+        res = await inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Player killed and removed from squad", description=res)
         await ctx.send(embed=embed)
@@ -76,12 +76,12 @@ class moderation(commands.Cog):
     @commands.command(description="Kick a player", usage="r!kick <player> [reason]", aliases=["kick_player"])
     @check_perms(kick=True)
     async def kick(self, ctx, name_or_id: str, *, reason: str = None):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
         if not reason: reason = "Kicked by a moderator"
-        res = inst.rcon.kick(player.steam_id, reason)
+        res = await inst.rcon.kick(player.steam_id, reason)
         self.bot.cache.instance(ctx.author, ctx.guild.id).disconnect_player(player)
 
         embed = base_embed(inst.id, title="Player kicked", description=res)
@@ -92,14 +92,14 @@ class moderation(commands.Cog):
     @commands.command(description="Ban a player", usage="r!ban <player> [duration] [reason]", aliases=["ban_player"])
     @check_perms(ban=True)
     async def ban(self, ctx, name_or_id: str, duration: str = "0", *, reason: str = None):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
         if "perm" in duration:
             duration = "0"
         if not reason: reason = "Banned by a moderator"
-        res = inst.rcon.ban(player.steam_id, duration, reason)
+        res = await inst.rcon.ban(player.steam_id, duration, reason)
         self.bot.cache.instance(ctx.author, ctx.guild.id).disconnect_player(player)
 
         embed = base_embed(inst.id, title="Player banned", description=res)
@@ -111,7 +111,7 @@ class moderation(commands.Cog):
     @check_perms(message=True)
     async def broadcast(self, ctx, *, message: str):
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.broadcast(message)
+        res = await inst.rcon.broadcast(message)
 
         embed = base_embed(self.bot.cache.instance(ctx.author, ctx.guild.id).id, title="Message broadcasted",
                            description=res)
@@ -123,16 +123,16 @@ class moderation(commands.Cog):
     @check_perms(disband=True)
     @is_game(game=["squad", "ps"])
     async def demote_commander(self, ctx, name_or_id: str, *, reason: str = None):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
-        res = inst.rcon.demote_commander(player.steam_id)
+        res = await inst.rcon.demote_commander(player.steam_id)
         if "is not a commander" in res:
             raise RconCommandError(res)
         warn_reason = "An Admin demoted you."
         if reason: warn_reason = warn_reason + " Reason: " + reason
-        inst.rcon.warn(player.steam_id, warn_reason)
+        await inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Commander demoted", description=res)
         await ctx.send(embed=embed)
@@ -143,16 +143,16 @@ class moderation(commands.Cog):
                       aliases=["squad_kick", "squadkick", "remove_from_squad"])
     @check_perms(disband=True)
     async def kick_from_squad(self, ctx, name_or_id: str, *, reason: str = None):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
-        res = inst.rcon.remove_from_squad(player.steam_id)
+        res = await inst.rcon.remove_from_squad(player.steam_id)
         if "is not in a squad" in res:
             raise RconCommandError(res)
         warn_reason = "An Admin removed you from your squad."
         if reason: warn_reason = warn_reason + " Reason: " + reason
-        inst.rcon.warn(player.steam_id, warn_reason)
+        await inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Player removed from squad", description=res)
         await ctx.send(embed=embed)
@@ -163,14 +163,14 @@ class moderation(commands.Cog):
                       aliases=["switch_teams", "change_team", "change_teams", "switch_player"])
     @check_perms(teamchange=True)
     async def switch_team(self, ctx, name_or_id: str, *, reason: str = None):
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
         player = inst.get_player(name_or_id)
         if not player:
             raise commands.BadArgument("Player %s isn't online at the moment" % name_or_id)
-        res = inst.rcon.change_team(player.steam_id)
+        res = await inst.rcon.change_team(player.steam_id)
         warn_reason = "An Admin switched your team."
         if reason: warn_reason = warn_reason + " Reason: " + reason
-        inst.rcon.warn(player.steam_id, warn_reason)
+        await inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Player switched", description=res)
         await ctx.send(embed=embed)
@@ -184,7 +184,7 @@ class moderation(commands.Cog):
         if team_id not in [1, 2]:
             raise commands.BadArgument('team_id needs to be either 1 or 2')
 
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
 
         if team_id == 1:
             team = inst.team1
@@ -198,11 +198,11 @@ class moderation(commands.Cog):
             raise commands.BadArgument('No squad found with this ID')
 
         players = inst.select(team_id=team_id, squad_id=squad_id)
-        res = inst.rcon.disband_squad(team_id, squad_id)
+        res = await inst.rcon.disband_squad(team_id, squad_id)
         warn_reason = "An Admin disbanded the squad you were in."
         if reason: warn_reason = warn_reason + " Reason: " + reason
         for player in players:
-            inst.rcon.warn(player.steam_id, warn_reason)
+            await inst.rcon.warn(player.steam_id, warn_reason)
 
         embed = base_embed(inst.id, title="Squad disbanded", description=res)
         await ctx.send(embed=embed)
@@ -216,7 +216,7 @@ class moderation(commands.Cog):
         if team_id not in [1, 2]:
             raise commands.BadArgument('team_id needs to be either 1 or 2')
 
-        inst = self.bot.cache.instance(ctx.author, ctx.guild.id).update()
+        inst = await self.bot.cache.instance(ctx.author, ctx.guild.id).update()
 
         if team_id == 1:
             team = inst.team1
@@ -236,8 +236,8 @@ class moderation(commands.Cog):
         if reason: warn_reason = warn_reason + " Reason: " + reason
         for player in players:
             try:
-                inst.rcon.change_team(player.steam_id)
-                inst.rcon.warn(player.steam_id, warn_reason)
+                await inst.rcon.change_team(player.steam_id)
+                await inst.rcon.warn(player.steam_id, warn_reason)
             except RconCommandError:
                 pass
 
@@ -259,11 +259,11 @@ class moderation(commands.Cog):
         if map_name:
             # check current game for instance select - squad uses another command
             if instance_details.game == 'squad':
-                res = inst.rcon.change_layer(map_name)
+                res = await inst.rcon.change_layer(map_name)
             else:
-                res = inst.rcon.set_next_map(map_name)
+                res = await inst.rcon.set_next_map(map_name)
         else:
-            res = inst.rcon.end_match()
+            res = await inst.rcon.end_match()
 
         embed = base_embed(self.bot.cache.instance(ctx.author, ctx.guild.id).id, title="Skipped the current match",
                            description=res)
@@ -274,7 +274,7 @@ class moderation(commands.Cog):
     @check_perms(changemap=True)
     async def restart_match(self, ctx):
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
-        res = inst.rcon.restart_match()
+        res = await inst.rcon.restart_match()
 
         embed = base_embed(self.bot.cache.instance(ctx.author, ctx.guild.id).id, title="Restarted the current match",
                            description=res)
@@ -290,9 +290,9 @@ class moderation(commands.Cog):
 
         # check current game for instance select - squad uses another command
         if instance_details.game == 'squad':
-            res = inst.rcon.set_next_layer(map_name)
+            res = await inst.rcon.set_next_layer(map_name)
         else:
-            res = inst.rcon.set_next_map(map_name)
+            res = await inst.rcon.set_next_map(map_name)
         inst.next_map = Map(map_name)
 
         embed = base_embed(self.bot.cache.instance(ctx.author, ctx.guild.id).id, title="Queued the next map",

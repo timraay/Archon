@@ -7,6 +7,7 @@ from pathlib import Path
 
 import logging
 
+import asyncio
 import discord
 from discord.ext.commands import BadArgument
 
@@ -50,19 +51,18 @@ SHORT_TEAM_NAMES = {
 class Cache():
     def __init__(self):
         self.instances = {}
-        for instance in instances.get_instances():
-            self._connect_instance(instance)
-
+        asyncio.gather(*(self._connect_instance(instance) for instance in instances.get_instances()))
         self.selected_instance = {}
 
-    def _connect_instance(self, instance, return_exception=False):
+    async def _connect_instance(self, instance, return_exception=False):
         try:
-            rcon = Rcon(instance.address, instance.port, instance.password, instance_id=instance.id)
+            rcon = await Rcon.create(instance.address, instance.port, instance.password, instance_id=instance.id)
         except Exception as e:
             self.instances[instance.id] = None
             if return_exception: return e 
         else:
-            self.instances[instance.id] = ServerInstance(instance.id, rcon)
+            self.instances[instance.id] = await ServerInstance.create(instance.id, rcon)
+        logging.info('Inst %s: Connected! Result --> %s', instance.id, self.instances[instance.id])
         return self.instances[instance.id]
 
     def _get_user_id(self, user):
@@ -114,10 +114,9 @@ class Cache():
         else:
             raise BadArgument("No instance cached with ID %s" % instance_id)
 
-    def update_all(self):
-        for i, inst in self.instances:
-            inst.update()
-            self.instances[i] = inst
+    async def update_all(self):
+        for inst in self.instances:
+            await inst.update(ignore_exceptions=True)
 
     def delete_instance(self, instance_id):
         if instance_id in self.instances:
@@ -143,12 +142,18 @@ class ServerInstance(MapRotation):
         self.team1 = None
         self.team2 = None
 
-        self.update()
+    @classmethod
+    async def create(cls, instance_id, rcon):
+        self = ServerInstance(instance_id, rcon)
 
+        await self.update()
+        
         path = Path(f'rotations/{str(self.id)}.json')
         if os.path.exists(path) and instances.Instance(self.id).uses_custom_rotation:
-            try: self.import_rotation(fp=path)
+            try: await self.import_rotation(fp=path)
             except: pass
+        
+        return self
 
     def select(self, steam_id: int = None, name: str = None, team_id: int = None, squad_id: int = None, player_id: int = None, min_online_time: int = None, max_online_time: int = None):
         pool = self.players
@@ -181,15 +186,15 @@ class ServerInstance(MapRotation):
             if players: player = players[0]
             return player
 
-    def update(self):
+    async def update(self, ignore_exceptions=False):
         try:
             logging.info('Inst %s: Updating...', self.id)
-            self._parse_maps()
+            await self._parse_maps()
             if not self.is_transitioning:
-                self._parse_players()
-                self._parse_squads()
+                await self._parse_players()
+                await self._parse_squads()
                 if self.map_rotation and self.next_map:
-                    self.validate_next_map()
+                    await self.validate_next_map()
             else:
                 logging.info('Inst %s: Map is transitioning', self.id)
             self.last_updated = datetime.now()
@@ -197,12 +202,13 @@ class ServerInstance(MapRotation):
             if (datetime.now() - timedelta(minutes=30)) > self.last_updated:
                 logging.error('Inst %s: Failed to connect for 5 minutes, disconnecting...', self.id)
                 self = None
-            raise ConnectionLost("Lost connection to RCON: " + str(e))
+            if not ignore_exceptions:
+                raise ConnectionLost("Lost connection to RCON: " + str(e))
         
         return self
 
-    def _parse_players(self):
-        res = self.rcon.list_players()
+    async def _parse_players(self):
+        res = await self.rcon.list_players()
 
         """
         We need to turn the data given by the server into a more feasible structure.
@@ -276,9 +282,9 @@ class ServerInstance(MapRotation):
         if messages:
             logs.ServerLogs(self.id).add('joins', messages)
 
-    def _parse_maps(self):
-        current_map = self.rcon.show_current_map()
-        next_map = self.rcon.show_next_map()
+    async def _parse_maps(self):
+        current_map = await self.rcon.show_current_map()
+        next_map = await self.rcon.show_next_map()
         
         """
         Old response format example:
@@ -322,7 +328,7 @@ class ServerInstance(MapRotation):
 
             if self.map_rotation:
                 try:
-                    next_map = self.map_changed(current_map)
+                    next_map = await self.map_changed(current_map)
                     logging.info('Inst %s: MAPROT: Next map will be %s', self.id, next_map)
                 except Exception as e:
                     logging.error('Inst %s: MAPROT: An error was raised while looking for next map: %s: %s', self.id, e.__class__.__name__, e)
@@ -330,8 +336,8 @@ class ServerInstance(MapRotation):
         if self.current_map != current_map: self.current_map = current_map
         if self.next_map != next_map: self.next_map = next_map
         
-    def _parse_squads(self):
-        res = self.rcon.list_squads()
+    async def _parse_squads(self):
+        res = await self.rcon.list_squads()
 
         """
         This is what the result from the server looks like:

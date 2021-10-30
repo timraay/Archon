@@ -16,7 +16,7 @@ with open('maps_ps.txt', 'r') as f:
 
 
 class MapRotation:
-    def import_rotation(self, fp=None, content=None):
+    async def import_rotation(self, fp=None, content=None):
         if fp:
             with open(fp, 'r') as f:
                 try: content = json.loads(f.read())
@@ -39,7 +39,7 @@ class MapRotation:
         # Set current and upcoming map
         self.cooldowns = {str(self.current_map): 0}
         self.current_map = Map(self.current_map)
-        self.next_map = self.map_changed(self.current_map)
+        self.next_map = await self.map_changed(self.current_map)
 
     def _get_next_map(self):
         all_entries = self.map_rotation.get_entries()
@@ -67,22 +67,22 @@ class MapRotation:
         for i in list(self.cooldowns):
             self.cooldowns[i] += 1
 
-    def map_changed(self, new_map):
+    async def map_changed(self, new_map):
         self._decrease_cooldown()
         self.cooldowns[str(new_map)] = 0
         if str(new_map) == str(self.next_map) or (self.next_map and not self.next_map.validate(len(self.players))) or self.is_transitioning:
             self.next_map = self._get_next_map()
             if self.next_map:
-                self.rcon.set_next_map(self.next_map)
+                await self.rcon.set_next_map(self.next_map)
 
         return self.next_map
         
-    def validate_next_map(self):
+    async def validate_next_map(self):
         if not self.next_map.validate(len(self.players)):
             logging.warning('Inst %s: MAPROT: %s failed to validate. Changing map...', self.id, self.next_map)
             self.next_map = self._get_next_map()
             if self.next_map:
-                self.rcon.set_next_map(str(self.next_map))
+                await self.rcon.set_next_map(str(self.next_map))
 
 
 class Pool:
