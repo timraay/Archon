@@ -12,6 +12,13 @@ GAME_IMAGES = {
 }
 
 
+SIMPLIFIED_CLASS_NAMES = {
+    int: "number",
+    str: "text",
+    discord.TextChannel: "text channel"
+}
+
+
 def get_name(user):
     return user.nick if user.nick else user.name
 
