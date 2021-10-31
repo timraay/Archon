@@ -300,7 +300,8 @@ class logs(commands.Cog):
     async def check_server(self):
         try:
             tasks = [self.update_instance(inst) for inst in self.bot.cache.instances.values() if inst]
-            await asyncio.wait(tasks)
+            if tasks:
+                await asyncio.wait(tasks)
                     
         except Exception as e:
             logging.critical('Unhandled exception in instance update cycle: %s: %s', e.__class__.__name__, e)
