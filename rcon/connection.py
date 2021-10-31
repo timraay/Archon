@@ -213,7 +213,7 @@ class RconConnection(object):
         if pkt_type == SQUAD_CHAT_STREAM:
             #print("packet is SQUAD_CHAT_STREAM")
             self.add_chat_message(body.strip(b'\x00\x01').decode('utf-8'))
-            return self._recv_pkt()
+            return await self._recv_pkt()
         # NOTE(bsubei): sometimes the end of multipacket response comes attached with the chat message (and the chat
         # message has the wrong packet type). This was observed on Squad version b-17.0.13.23847.
         # e.g. packet body: b'\x00\x00\x00\x01\x00\x00\x00[ChatAll] this is example chat\x00\x00'.
