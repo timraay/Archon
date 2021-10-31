@@ -1,4 +1,4 @@
-import discord
+import discord, asyncio
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta
 import re
@@ -220,85 +220,88 @@ class logs(commands.Cog):
                         else: embed.color = discord.Color.from_rgb(201, 4, 24)
         
                     await chat_channel.send(embed=embed)
+    async def _process_logs(self, inst):
+        try:
+            max_id = self.last_seen_id[inst.id]
+        except KeyError:
+            max_id = ServerLogs(inst.id)._get_max_log_id()
+            new_max_id = max_id
+            new_logs = []
+        else:
+            new_max_id, new_logs = ServerLogs(inst.id).get_logs_after(max_id)
 
+        config = Instance(inst.id).config
+        guild = self.bot.get_guild(config['guild_id'])
+        if guild and new_logs:
+            # Note: Chat logs are handled alongside the triggers
+            channel_joins = guild.get_channel(config['channel_log_joins'])
+            channel_match = guild.get_channel(config['channel_log_match'])
+            channel_rcon = guild.get_channel(config['channel_log_rcon'])
+            channel_teamkills = guild.get_channel(config['channel_log_teamkills'])
+
+            if channel_rcon:
+                default_embed = base_embed(inst.id)
+                logs = [log for log in new_logs if log['category'] == 'rcon']
+                for log in logs:
+                    embed = default_embed
+                    embed.color = discord.Color.teal()
+                    embed.title = log['message']
+                    embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+                    await channel_rcon.send(embed=embed)
+            if channel_joins:
+                default_embed = base_embed(inst.id)
+                logs = [log for log in new_logs if log['category'] == 'joins']
+                if logs:
+                    joins = [log['message'] for log in logs if log['message'].endswith(' connected')]
+                    leaves = [log['message'] for log in logs if not log['message'].endswith(' connected')]
+
+                    embed = default_embed
+                    embed.set_footer(text=f"Recorded at {logs[-1]['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+
+                    if joins:    
+                        embed.color = discord.Color.dark_green()
+                        embed.description = "\n".join(joins)
+                        await channel_joins.send(embed=embed)
+                    if leaves:    
+                        embed.color = discord.Embed.Empty
+                        embed.description = "\n".join(leaves)
+                        await channel_joins.send(embed=embed)
+            if channel_match:
+                default_embed = base_embed(inst.id)
+                logs = [log for log in new_logs if log['category'] == 'match']
+                for log in logs:
+                    embed = default_embed
+                    embed.color = discord.Color.from_rgb(255,255,255)
+                    embed.title = log['message']
+                    embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+                    await channel_match.send(embed=embed)
+            if channel_teamkills:
+                default_embed = base_embed(inst.id)
+                logs = [log for log in new_logs if log['category'] == 'teamkill']
+                if logs:
+                    embed = default_embed
+                    embed.set_footer(text=f"Recorded at {logs[-1]['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
+
+                    embed.color = discord.Color.dark_red()
+                    embed.description = "\n".join([log['message'] for log in logs])
+                    await channel_teamkills.send(embed=embed)
+
+        self.last_seen_id[inst.id] = new_max_id
+    async def update_instance(self, inst):
+        try:
+            await self._query(inst)
+            await self._process_logs(inst)
+        except Exception as e:
+            logging.exception('Inst %s: Unhandled exception whilst updating: %s: %s', inst.id, e.__class__.__name__, e)
+            if isinstance(e, (RconAuthError, ConnectionLost)) and (datetime.now() - timedelta(minutes=30)) > inst.last_updated:
+                self.bot.cache.instances[inst.id] = None
 
     @tasks.loop(seconds=SECONDS_BETWEEN_CHECKS)
     async def check_server(self):
         try:
-            for inst in self.bot.cache.instances.values():
-                if inst:
-                    try:
-                        await self._query(inst)
-                        try:
-                            max_id = self.last_seen_id[inst.id]
-                        except KeyError:
-                            max_id = ServerLogs(inst.id)._get_max_log_id()
-                            new_max_id = max_id
-                            new_logs = []
-                        else:
-                            new_max_id, new_logs = ServerLogs(inst.id).get_logs_after(max_id)
-
-                        config = Instance(inst.id).config
-                        guild = self.bot.get_guild(config['guild_id'])
-                        if guild and new_logs:
-                            # Note: Chat logs are handled alongside the triggers
-                            channel_joins = guild.get_channel(config['channel_log_joins'])
-                            channel_match = guild.get_channel(config['channel_log_match'])
-                            channel_rcon = guild.get_channel(config['channel_log_rcon'])
-                            channel_teamkills = guild.get_channel(config['channel_log_teamkills'])
-
-                            if channel_rcon:
-                                default_embed = base_embed(inst.id)
-                                logs = [log for log in new_logs if log['category'] == 'rcon']
-                                for log in logs:
-                                    embed = default_embed
-                                    embed.color = discord.Color.teal()
-                                    embed.title = log['message']
-                                    embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
-                                    await channel_rcon.send(embed=embed)
-                            if channel_joins:
-                                default_embed = base_embed(inst.id)
-                                logs = [log for log in new_logs if log['category'] == 'joins']
-                                if logs:
-                                    joins = [log['message'] for log in logs if log['message'].endswith(' connected')]
-                                    leaves = [log['message'] for log in logs if not log['message'].endswith(' connected')]
-
-                                    embed = default_embed
-                                    embed.set_footer(text=f"Recorded at {logs[-1]['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
-
-                                    if joins:    
-                                        embed.color = discord.Color.dark_green()
-                                        embed.description = "\n".join(joins)
-                                        await channel_joins.send(embed=embed)
-                                    if leaves:    
-                                        embed.color = discord.Embed.Empty
-                                        embed.description = "\n".join(leaves)
-                                        await channel_joins.send(embed=embed)
-                            if channel_match:
-                                default_embed = base_embed(inst.id)
-                                logs = [log for log in new_logs if log['category'] == 'match']
-                                for log in logs:
-                                    embed = default_embed
-                                    embed.color = discord.Color.from_rgb(255,255,255)
-                                    embed.title = log['message']
-                                    embed.set_footer(text=f"Recorded at {log['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
-                                    await channel_match.send(embed=embed)
-                            if channel_teamkills:
-                                default_embed = base_embed(inst.id)
-                                logs = [log for log in new_logs if log['category'] == 'teamkill']
-                                if logs:
-                                    embed = default_embed
-                                    embed.set_footer(text=f"Recorded at {logs[-1]['timestamp'].strftime('%a, %b %d, %Y %I:%M %p')}")
-
-                                    embed.color = discord.Color.dark_red()
-                                    embed.description = "\n".join([log['message'] for log in logs])
-                                    await channel_teamkills.send(embed=embed)
-
-                        self.last_seen_id[inst.id] = new_max_id
-                    except Exception as e:
-                        logging.exception('Inst %s: Unhandled exception whilst updating: %s: %s', inst.id, e.__class__.__name__, e)
-                        if isinstance(e, (RconAuthError, ConnectionLost)) and (datetime.now() - timedelta(minutes=30)) > inst.last_updated:
-                            self.bot.cache.instances[inst.id] = None
+            tasks = [self.update_instance(inst) for inst in self.bot.cache.instances.values() if inst]
+            await asyncio.wait(tasks)
+                    
         except Exception as e:
             logging.critical('Unhandled exception in instance update cycle: %s: %s', e.__class__.__name__, e)
 

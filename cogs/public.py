@@ -1,7 +1,5 @@
-import discord
-from discord.ext import commands, tasks
-import json
-from ast import literal_eval
+import discord, asyncio
+from discord.ext import commands
 from datetime import datetime
 
 from rcon.instances import check_perms, get_available_instances, get_perms
@@ -41,8 +39,14 @@ class public(commands.Cog):
     
     @commands.command(description="View statuses of all accessible servers", usage="r!servers")
     async def servers(self, ctx):
-        instances = get_available_instances(ctx.author, ctx.guild.id)
-        instances = [await self.bot.cache.instance(inst.id, by_inst_id=True).update() for inst, perms in instances if perms.public]
+        tasks = list()
+        for inst, perms in get_available_instances(ctx.author, ctx.guild.id):
+            if not perms.public: continue
+            try: instance = self.bot.cache.instance(inst.id, by_inst_id=True)
+            except: continue
+            tasks.append(instance.update())
+        instances = await asyncio.gather(*tasks)
+
         for inst in instances:      
             embed = self.create_server_embed(inst)
             await ctx.send(embed=embed)
