@@ -86,7 +86,7 @@ cur.execute('CREATE TABLE IF NOT EXISTS permissions(instance_id INT, user_id INT
 db.commit()
 
 
-def add_instance(name: str, address: str, port: int, password: str, owner_id: int, game: str, default_perms: int = 0, uses_custom_rotation: int = 0):
+async def add_instance(name: str, address: str, port: int, password: str, owner_id: int, game: str, default_perms: int = 0, uses_custom_rotation: int = 0):
     # Look for already existing instances that use this address.
     cur.execute('SELECT * FROM instances WHERE address = ? AND port = ?', (address, port))
     if cur.fetchone():
@@ -94,8 +94,8 @@ def add_instance(name: str, address: str, port: int, password: str, owner_id: in
 
     # Open and close a connection to see whether this server can be connected
     # to. The RconConnection class will raise a RconAuthError otherwise.
-    rcon = RconConnection(address, port, password)
-    rcon._sock.close()
+    rcon = await RconConnection.create(address, port, password)
+    rcon._writer.close()
 
     # The instance can now be added. But first we
     # need to create a new unique ID for this instance.
@@ -110,11 +110,16 @@ def add_instance(name: str, address: str, port: int, password: str, owner_id: in
 
     return Instance(instance_id)
 
-def edit_instance(inst_id: int, name: str, address: str, port: int, password: str, game: str):
+async def edit_instance(inst_id: int, name: str, address: str, port: int, password: str, game: str):
     # Look for already existing instances that use this address.
     cur.execute('SELECT * FROM instances WHERE address = ? AND instance_id != ?', (address, inst_id))
     if cur.fetchone():
         raise commands.BadArgument("A different server with this address has already been registered")
+
+    # Open and close a connection to see whether this server can be connected
+    # to. The RconConnection class will raise a RconAuthError otherwise.
+    rcon = await RconConnection.create(address, port, password)
+    rcon._writer.close()
 
     # Now we have all parameters we can edit the instance in the database.
     inst = Instance(inst_id)
@@ -195,10 +200,6 @@ class Instance:
         db.commit()
 
     def set_credentials(self, address: str, port: int, password: str):
-        # Check whether host and port are valid
-        rcon = RconConnection(address, port, password)
-        rcon._sock.close()
-
         cur.execute(f'UPDATE instances SET address = ? WHERE instance_id = ?', (address, self.id))
         cur.execute(f'UPDATE instances SET port = ? WHERE instance_id = ?', (port, self.id))
         cur.execute(f'UPDATE instances SET password = ? WHERE instance_id = ?', (password, self.id))

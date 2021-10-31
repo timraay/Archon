@@ -107,7 +107,7 @@ class Cache():
             inst = self.instances[instance_id]
             if inst == None:
                 raise CacheNotFound("No cached data found for instance ID %s" % instance_id)
-            elif inst.rcon._sock == None:
+            elif inst.rcon._writer.is_closing():
                 inst = None
                 raise CacheNotFound("Socket disconnected, please reconnect using r!inst connect")
             return inst
