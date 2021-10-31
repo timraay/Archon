@@ -19,8 +19,9 @@ from rcon.map_rotation import MapRotation, Map
 DETACHMENT_PLAYER_LIMITS = {
     "Command": 2,
     "Infantry": 10,
-    "Heavy MG": 2,
-    "Recon": 2,
+    "French Infantry": 10,
+    "HMG Det": 2,
+    "Recon Det": 2,
     "Artillery": 3,
     "Engineers": 3
 }
