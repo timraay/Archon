@@ -465,7 +465,7 @@ class Squad():
         self.name = name
         self.player_ids = player_ids
         self.locked = locked
-        self.creator = creator_steam_id if creator_steam_id else self.player_ids[0]
+        self.creator = creator_steam_id if creator_steam_id else (self.player_ids[0] if self.player_ids else 0)
         self.creator_name = creator_name
         """
         self.type = None
