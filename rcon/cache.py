@@ -16,37 +16,118 @@ from rcon.connection import RconAuthError
 from rcon.query import SourceQuery
 from rcon.map_rotation import MapRotation, Map
 
-SQUAD_PLAYER_LIMITS = {
+DETACHMENT_PLAYER_LIMITS = {
     "Command": 2,
     "Infantry": 10,
     "Heavy MG": 2,
     "Recon": 2,
-    "Artillery": 3
+    "Artillery": 3,
+    "Engineers": 3
 }
 
 SHORT_TEAM_NAMES = {
     "German Empire": "GER",
+    "German Jaeger Regiment": "GER",
     "French Republic": "FR",
+    "French Army": "FR",
     "American Expeditionary Force": "AEF",
+    "British Expeditionary Force": "BEF",
+    "369th Infantry Division": "HHF",
+    "Canadian Expeditionary Force": "CEF",
 
-    "British Army": "BA",
+    "British Army": "UK",
     "Canadian Army": "CAF",
     "Middle Eastern Alliance": "MEA",
-    "Russian Ground Forces": "RUS",
+    "Russian Ground Forces": "RU",
     "United States Army": "US",
     "Insurgent Forces": "INS",
-    "Irregular Militia Forces": "MIL",
-
-    "British Armed Forces": "BA",
-    "CAF Battlegroup": "CAF",
-    "MEA Combined Arms Battalion": "MEA",
-    "Russian battalion tactical group": "RUS",
-    "US Brigade Combat Team": "US",
-    "Local Insurgent Cell": "INS",
-    "Local Militia Group": "MIL"
+    "Irregular Militia Forces": "MIL"
 }
 
+DIVISION_FACTIONS = {
+    "US 504th Parachute Infantry Regiment": "United States Army",
+    "US 37th Armor Regiment": "United States Army",
+    "US 1st Infantry Division": "United States Army",
+    "US 149th Brigade, Kentucky Army National Guard": "United States Army",
+    "US 1st Cavalry Regiment": "United States Army",
+    "US 2nd Cavalry Regiment": "United States Army",
 
+    "UK 2nd Battalion Parachute Regiment": "British Army",
+    "UK Queen's Royal Hussars": "British Army",
+    "UK 3rd Division": "British Army",
+    "UK 1st Battalion, Grenadier Guards": "British Army",
+    "UK 1st Battalion Yorkshire Regiment": "British Army",
+    "UK 3 Battalion The Rifles": "British Army",
+    
+    "CAF 3rd Battalion Royal Canadian Regiment": "Canadian Armed Forces",
+    "CAF Lord Strathcona's Horse Regiment": "Canadian Armed Forces",
+    "CAF 1 Canadian Mechanized Brigade Group": "Canadian Armed Forces",
+    "CAF 3rd Battallion PPCLI": "Canadian Armed Forces",
+    "CAF Royal Newfoundland Regiment": "Canadian Armed Forces",
+    "CAF 1st Battalion Royal 22e Régiment": "Canadian Armed Forces",
+    "CAF Royal Westminster Regiment": "Canadian Armed Forces",
+    "CAF Canadian Combat Support Brigade": "Canadian Armed Forces",
+    
+    "MEA 91st Air Assault Battalion": "Middle Eastern Alliance",
+    "MEA 60th Prince Assur Armored Brigade": "Middle Eastern Alliance",
+    "MEA 1st Battalion, Legion of Babylon": "Middle Eastern Alliance",
+    "MEA 4th Border Guards Group": "Middle Eastern Alliance",
+    "MEA 3rd King Qadesh Mechanized Infantry Brigade": "Middle Eastern Alliance",
+    "MEA 83rd Prince Zaid Motorized Infantry Brigade": "Middle Eastern Alliance",
+    
+    "Local Insurgent Cell": "Insurgent Forces",
+    "Insurgent Homeland Freedom Fighters": "Insurgent Forces",
+
+    "Local Militia Group": "Irregular Militia Forces",
+    "The Peoples' Front Militia": "Irregular Militia Forces"
+}
+
+DIVISION_TYPES = {
+    "US 504th Parachute Infantry Regiment": "Air Assault",
+    "US 37th Armor Regiment": "Armored",
+    "US 1st Infantry Division": "Combined Arms",
+    "US 149th Brigade, Kentucky Army National Guard": "Light Infantry",
+    "US 1st Cavalry Regiment": "Mechanized",
+    "US 2nd Cavalry Regiment": "Motorized",
+
+    "UK 2nd Battalion Parachute Regiment": "Air Assault",
+    "UK Queen's Royal Hussars": "Armored",
+    "UK 3rd Division": "Combined Arms",
+    "UK 1st Battalion, Grenadier Guards": "Light Infantry",
+    "UK 1st Battalion Yorkshire Regiment": "Mechanized",
+    "UK 3 Battalion The Rifles": "Motorized",
+    
+    "CAF 3rd Battalion Royal Canadian Regiment": "Air Assault",
+    "CAF Lord Strathcona's Horse Regiment": "Armored",
+    "CAF 1 Canadian Mechanized Brigade Group": "Combined Arms",
+    "CAF 3rd Battallion PPCLI": "Light Infantry",
+    "CAF Royal Newfoundland Regiment": "Light Infantry",
+    "CAF 1st Battalion Royal 22e Régiment": "Mechanized",
+    "CAF Royal Westminster Regiment": "Motorized",
+    "CAF Canadian Combat Support Brigade": "Support",
+
+    "RU 108th Guards Airborne Kuban Cossack Regiment": "Air Assault",
+    "RU 6th Separate Czestochowa Tank Brigade": "Armored",
+    "RU 49th Combined Arms Army": "Combined Arms",
+    "RU 205th Detached Mechanized Cossacks Brigade": "Light Infantry",
+    "RU 205th Separate Cossacks Mechanized Rifle Brigade": "Mechanized",
+    "RU 247th Guards Air Assault Caucasus Cossacks Regiment": "Motorized",
+    
+    "MEA 91st Air Assault Battalion": "Air Assault",
+    "MEA 60th Prince Assur Armored Brigade": "Armored",
+    "MEA 1st Battalion, Legion of Babylon": "Combined Arms",
+    "MEA 4th Border Guards Group": "Light Infantry",
+    "MEA 3rd King Qadesh Mechanized Infantry Brigade": "Mechanized",
+    "MEA 83rd Prince Zaid Motorized Infantry Brigade": "Motorized",
+    
+    "Local Insurgent Cell": "Combined Arms",
+    "Insurgent Homeland Freedom Fighters": "Light Infantry",
+
+    "Local Militia Group": "Combined Arms",
+    "The Peoples' Front Militia": "Light Infantry"
+}
+
+    
 class Cache():
     def __init__(self):
         self.instances = {}
@@ -428,13 +509,23 @@ class OnlinePlayer():
 class Team():
     def __init__(self, id: int, faction: str):
         self.id = id
-        self.faction = faction
-        self.faction_short = SHORT_TEAM_NAMES[self.faction] if self.faction in SHORT_TEAM_NAMES else self.faction
+        self.faction = DIVISION_FACTIONS.get(faction, faction)
+        self.faction_short = SHORT_TEAM_NAMES.get(self.faction, self.faction)
+        self.division = faction if faction != self.faction else None
+        self.division_type = DIVISION_TYPES.get(self.division)
         self.squads = []
         self.unassigned = []
 
     def __len__(self):
         return sum([len(squad) for squad in self.squads]) + len(self.unassigned)
+
+    def __str__(self):
+        if self.division_type:
+            return f"{self.faction} ({self.division_type})"
+        elif self.division:
+            return self.division
+        else:
+            return self.faction
 
     def set_squad(self, id: int, name: str, player_ids: list, locked: bool, creator_name: str, creator_steam_id: int):
         squad = None

@@ -78,7 +78,7 @@ class public(commands.Cog):
             if team_id == 1: team = inst.team1
             elif team_id == 2: team = inst.team2
             
-            embed = base_embed(inst.id, title=f"Team {str(team_id)} - {team.faction}", description=f"{str(len(team))} players")
+            embed = base_embed(inst.id, title=f"Team {str(team_id)} - {str(team)}", description=f"{str(len(team))} players")
 
             # Add a field for each squad
             for squad in team.squads:
