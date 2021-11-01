@@ -28,7 +28,8 @@ DETACHMENT_PLAYER_LIMITS = {
 
 SHORT_TEAM_NAMES = {
     "German Empire": "GER",
-    "German Jaeger Regiment": "GER",
+    "Imperial German Army": "GER",
+    "Jaeger Regiments": "GER",
     "French Republic": "FR",
     "French Army": "FR",
     "American Expeditionary Force": "AEF",
