@@ -1,3 +1,4 @@
-discord>=1.0.1
+discord.py>=1.7.3
 pytz
 numpy
+git+git://github.com/timraay/aiorcon.git@9a1f7a4f5cb8e22f4a00da53fdb4090bf02dd823

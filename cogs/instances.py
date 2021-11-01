@@ -3,7 +3,7 @@ from discord.ext import commands
 import asyncio
 import re
 
-from rcon.connection import RconAuthError
+from aiorcon import RCONAuthenticationError, RCONConnectionError
 from rcon.instances import *
 
 from utils import add_empty_fields, base_embed, get_name
@@ -378,8 +378,8 @@ class instances(commands.Cog):
                             inst.store_config()
                         elif operation == 1:
                             inst = await edit_instance(inst.id, game=values[0], address=values[1], port=values[2], password=values[3], name=values[4])
-                    except RconAuthError as e:
-                        await ctx.author.send(f"Unable to connect to the server: {str(e)}")
+                    except (RCONAuthenticationError, RCONConnectionError) as e:
+                        await ctx.author.send(f"Unable to connect! {str(e)}")
                         await asyncio.sleep(3)
                         confirmation = ""
                     except commands.BadArgument as e:

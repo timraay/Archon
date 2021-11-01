@@ -3,10 +3,9 @@ from discord.ext import commands, tasks
 from datetime import datetime, timedelta
 import re
 
-from rcon.commands import Rcon
+from aiorcon.exceptions import RCONAuthenticationError, RCONConnectionError
 from rcon.instances import check_perms, Instance
 from rcon.logs import ServerLogs, format_log
-from rcon.connection import RconAuthError, RconError
 from rcon.cache import ConnectionLost
 
 import logging
@@ -96,8 +95,7 @@ class logs(commands.Cog):
             await inst.rcon.exec_command("a")
 
         # Grab all the new chat messages
-        new_chat_messages = inst.rcon.get_player_chat()
-        inst.rcon.clear_player_chat()
+        new_chat_messages = inst.rcon.get_new_messages()
 
         # Parse incoming messages
         # '[ChatAll] [SteamID:12345678901234567] [FP] Clan Member 1 : Hello world!'
@@ -293,7 +291,7 @@ class logs(commands.Cog):
             await self._process_logs(inst)
         except Exception as e:
             logging.exception('Inst %s: Unhandled exception whilst updating: %s: %s', inst.id, e.__class__.__name__, e)
-            if isinstance(e, (RconAuthError, ConnectionLost)) and (datetime.now() - timedelta(minutes=30)) > inst.last_updated:
+            if isinstance(e, (RCONConnectionError, RCONAuthenticationError, ConnectionLost)) and (datetime.now() - timedelta(minutes=30)) > inst.last_updated:
                 self.bot.cache.instances[inst.id] = None
 
     @tasks.loop(seconds=SECONDS_BETWEEN_CHECKS)

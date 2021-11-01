@@ -1,5 +1,12 @@
 # RCON for games running on the OWI core, accessed through Discord, by timraay
 
+# Setup logger
+import logging
+from datetime import datetime
+logname = datetime.utcnow().strftime('logs/Archon-%Y.%m.%d-%H.%M.%S.log')
+logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', datefmt='%m/%d %H:%M:%S', filename=logname, filemode='w+', level=logging.INFO)
+logging.info('Starting bot...')
+
 import discord
 from discord.ext import commands
 import os
@@ -140,13 +147,6 @@ for cog in os.listdir(Path("./cogs")):
             print(f"{cog} can not be loaded:")
             raise e
 
-# Setup logger
-import logging
-from datetime import datetime
-logname = datetime.utcnow().strftime('logs/Archon-%Y.%m.%d-%H.%M.%S.log')
-logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', datefmt='%m/%d %H:%M:%S', filename=logname, filemode='w+', level=logging.INFO)
-logging.info('Launching bot...')
-
 # Initialize cache
 from rcon.cache import Cache
 try:
@@ -159,4 +159,7 @@ except:
 with open("token.txt", "r") as f:
     token = f.read()
 
-bot.run(token)
+try:
+    bot.run(token)
+except KeyboardInterrupt:
+    pass

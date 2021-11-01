@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timedelta
+
 from utils import get_player_input_type
 import difflib
 import os
@@ -11,9 +12,9 @@ import asyncio
 import discord
 from discord.ext.commands import BadArgument
 
+from aiorcon.exceptions import RCONAuthenticationError, RCONConnectionError
 from rcon import instances, logs, permissions
 from rcon.commands import Rcon
-from rcon.connection import RconAuthError
 from rcon.query import SourceQuery
 from rcon.map_rotation import MapRotation, Map
 
@@ -55,11 +56,12 @@ class Cache():
         self.selected_instance = {}
 
     async def _connect_instance(self, instance, return_exception=False):
+        loop = asyncio.get_event_loop()
         try:
-            rcon = await Rcon.create(instance.address, instance.port, instance.password, instance_id=instance.id)
+            rcon = await Rcon.create(instance.address, instance.port, instance.password, loop, auto_reconnect_attempts=1, auto_reconnect_delay=1, auto_reconnect_cb=lambda x: None)
         except Exception as e:
             self.instances[instance.id] = None
-            if return_exception: return e 
+            if return_exception: return e
         else:
             self.instances[instance.id] = await ServerInstance.create(instance.id, rcon)
         logging.info('Inst %s: Connected! Result --> %s', instance.id, self.instances[instance.id])
@@ -198,9 +200,9 @@ class ServerInstance(MapRotation):
             else:
                 logging.info('Inst %s: Map is transitioning', self.id)
             self.last_updated = datetime.now()
-        except RconAuthError as e:
+        except (RCONConnectionError, RCONAuthenticationError) as e:
             if (datetime.now() - timedelta(minutes=30)) > self.last_updated:
-                logging.error('Inst %s: Failed to connect for 5 minutes, disconnecting...', self.id)
+                logging.error('Inst %s: Failed to connect for 30 minutes, disconnecting...', self.id)
                 self = None
             if not ignore_exceptions:
                 raise ConnectionLost("Lost connection to RCON: " + str(e))

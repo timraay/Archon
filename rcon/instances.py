@@ -1,8 +1,7 @@
 import sqlite3
-import discord
-from discord import guild
+import asyncio
 from discord.ext import commands
-from rcon.connection import RconConnection
+from rcon.commands import Rcon
 from rcon.permissions import *
 
 
@@ -93,9 +92,10 @@ async def add_instance(name: str, address: str, port: int, password: str, owner_
         raise commands.BadArgument("A server with this address has already been registered")
 
     # Open and close a connection to see whether this server can be connected
-    # to. The RconConnection class will raise a RconAuthError otherwise.
-    rcon = await RconConnection.create(address, port, password)
-    rcon._writer.close()
+    # to. The Rcon class will raise a RCONError otherwise.
+    loop = asyncio.get_event_loop()
+    rcon = await Rcon.create(address, port, password, loop=loop, auto_reconnect_attempts=0, timeout=3)
+    rcon.close()
 
     # The instance can now be added. But first we
     # need to create a new unique ID for this instance.
@@ -117,9 +117,10 @@ async def edit_instance(inst_id: int, name: str, address: str, port: int, passwo
         raise commands.BadArgument("A different server with this address has already been registered")
 
     # Open and close a connection to see whether this server can be connected
-    # to. The RconConnection class will raise a RconAuthError otherwise.
-    rcon = await RconConnection.create(address, port, password)
-    rcon._writer.close()
+    # to. The Rcon class will raise a RCONError otherwise.
+    loop = asyncio.get_event_loop()
+    rcon = await Rcon.create(address, port, password, loop=loop, auto_reconnect_attempts=0, timeout=3)
+    rcon.close()
 
     # Now we have all parameters we can edit the instance in the database.
     inst = Instance(inst_id)
