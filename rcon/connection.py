@@ -58,9 +58,12 @@ class RconPacket(object):
 
     def pack(self):
         """Return the packed version of the packet."""
-        return struct.pack('<3i{0}s'.format(len(self.body) + 2),
-                           self.size(), self.pkt_id, self.pkt_type,
-                           bytearray(self.body, 'utf-8'))
+        body = self.body
+        if type(body) == str:
+            body = body.encode('utf-8')
+        terminated_body = body + b"\x00\x00"
+        size = struct.calcsize("<ii") + len(terminated_body)
+        return struct.pack("<iii", size, self.pkt_id, self.pkt_type) + terminated_body
 
 
 @contextlib.contextmanager
