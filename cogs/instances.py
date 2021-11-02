@@ -6,7 +6,7 @@ import re
 from rcon.connection import RconAuthError
 from rcon.instances import *
 
-from utils import add_empty_fields, base_embed, get_name
+from utils import add_empty_fields, base_embed, get_name, SIMPLIFIED_CLASS_NAMES
 
 
 CONFIG_DESC = {
@@ -632,7 +632,10 @@ class instances(commands.Cog):
             old_value = inst.config[key]
 
             try: value = type(inst.config[key])(value)
-            except ValueError: raise commands.BadArgument("Value should be %s, not %s" % (type(inst.config[key]).__name__, type(value).__name__))
+            except ValueError:
+                expected = type(inst.config[key])
+                received = type(value)
+                raise commands.BadArgument("Value should be %s, not %s" % (SIMPLIFIED_CLASS_NAMES.get(expected, expected.__name__), SIMPLIFIED_CLASS_NAMES.get(received, received.__name__)))
 
             inst.config[CONFIG_KEY + option] = value
             inst.store_config()
