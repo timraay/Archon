@@ -261,7 +261,7 @@ class moderation(commands.Cog):
             if instance_details.game == 'squad':
                 res = inst.rcon.change_layer(map_name)
             else:
-                res = inst.rcon.set_next_map(map_name)
+                res = inst.rcon.switch_to_map(map_name)
         else:
             res = inst.rcon.end_match()
 
