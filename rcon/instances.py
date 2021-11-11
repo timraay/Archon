@@ -112,9 +112,9 @@ def add_instance(name: str, address: str, port: int, password: str, owner_id: in
 
 def edit_instance(inst_id: int, name: str, address: str, port: int, password: str, game: str):
     # Look for already existing instances that use this address.
-    cur.execute('SELECT * FROM instances WHERE address = ? AND instance_id != ?', (address, inst_id))
+    cur.execute('SELECT * FROM instances WHERE address = ? AND port = ? AND instance_id != ?', (address, port, inst_id))
     if cur.fetchone():
-        raise commands.BadArgument("A different server with this address has already been registered")
+        raise commands.BadArgument("A server with this address has already been registered")
 
     # Now we have all parameters we can edit the instance in the database.
     inst = Instance(inst_id)
