@@ -1,46 +1,69 @@
-# All Beyond The Wire maps and layers as of v0.12
+# All Beyond The Wire maps and layers as of v0.14
 
+Ansoncourt Firefight 1918 AEF vs GER
+Ansoncourt Assault 1918 AEF vs GER
 Ansoncourt Assault 1915 GER vs FR
-Ansoncourt Assault 1918 US vs GER
+Ansoncourt Frontlines 1918 AEF vs GER
 Ansoncourt Frontlines 1915 FR vs GER
-Ansoncourt Frontlines 1918 US vs GER
-
 Cantigny Assault 1918 GER vs FR
-Cantigny Assault 1918 US vs GER
+Cantigny Assault 1918 AEF vs GER
+Cantigny Frontlines 1918 AEF vs GER
 Cantigny Frontlines 1918 FR vs GER
-Cantigny Frontlines 1918 US vs GER
-
+Chateau-Thierry Assault 1918 AEF vs GER
 Chateau-Thierry Assault 1918 GER vs FR
-Chateau-Thierry Assault 1918 US vs GER
+Chateau-Thierry Frontlines 1918 AEF vs GER
 Chateau-Thierry Frontlines 1918 FR vs GER
-Chateau-Thierry Frontlines 1918 US vs GER
-
-Combles Assault 1914 FR vs GER
-Combles Assault 1916 UK vs GER
-Combles Frontlines 1914 FR vs GER
-Combles Frontlines 1916 UK vs GER
-
-Frise Assault 1914 FR vs GER
-Frise Assault 1916 UK vs GER
-Frise Frontlines 1914 FR vs GER
-Frise Frontlines 1916 UK vs GER
-
+Combles Assault 1916 BEF vs GER
+Combles Assault 1916 FR vs GER
+Combles Assault 1918 GER vs BEF
+Combles Assault 1914 JAG vs FR
+Combles Frontlines 1916 BEF vs GER
+Combles Frontlines 1918 BEF vs GER
+Combles Frontlines 1914 FR vs JAG
+Frise Assault 1916 FR vs GER
+Frise Assault 1918 BEF vs GER
+Frise Frontlines 1916 FR vs GER
+Frise Frontlines 1918 BEF vs GER
+Frise Firefight 1916 FR vs GER
+Poelcappelle Assault 1917 BEF vs GER
+Poelcappelle Assault 1915 GER vs CEF
+Poelcappelle Assault 1915 JAG vs CEF
 Poelcappelle Assault 1914 FR vs GER
-Poelcappelle Assault 1917 UK vs GER
+Poelcappelle Frontlines 1917 BEF vs GER
+Poelcappelle Frontlines 1915 BEF vs JAG
 Poelcappelle Frontlines 1914 FR vs GER
-Poelcappelle Frontlines 1917 UK vs GER
-
-Sechault Assault 1915 GER vs FR
+Poelcappelle Firefight 1917 BEF vs GER
 Sechault Assault 1918 HHF vs GER
+Sechault Assault 1915 GER vs FR
 Sechault Frontlines 1918 HHF vs GER
-
+Sechault Frontlines 1915 FR vs GER
+Sechault Firefight 1918 HHF vs GER
+Vieil Armand Assault 1915 CHA vs JAG
+Vieil Armand Assault 1915 JAG vs CHA
+Vieil Armand Frontlines 1915 CHA vs JAG
+Vieil Armand Firefight 1915 CHA vs JAG
+Vimy Ridge Assault 1917 CEF vs GER
+Vimy Ridge Assault 1915 FR vs GER
+Vimy Ridge Assault 1914 GER vs FR
+Vimy Ridge Frontlines 1914 FR vs GER
+Vimy Ridge Frontlines 1917 CEF vs GER
+Vimy Ridge Firefight 1917 CEF vs GER
+Zonnebeke Assault 1914 BEF vs GER
+Zonnebeke Assault 1918 BEF vs GER
+Zonnebeke Assault 1915 BEF vs JAG
+Zonnebeke Assault 1915 CEF vs GER
 Zonnebeke Assault 1914 FR vs GER
+Zonnebeke Assault 1918 GER vs BEF
+Zonnebeke Assault 1915 GER vs CEF
 Zonnebeke Assault 1914 GER vs FR
-Zonnebeke Assault 1915 UK vs GER
-Zonnebeke Frontlines 1914 FR vs GER
-Zonnebeke Frontlines 1915 UK vs GER
+Zonnebeke Assault 1915 JAG vs BEF
+Zonnebeke Frontlines 1918 BEF vs GER
+Zonnebeke Frontlines 1915 CEF vs GER
+Zonnebeke Frontlines 1915 CEF vs JAG
+Zonnebeke Frontlines 1914 FR vs GER 
 
 Shooting Range FRvsGER
-Shooting Range USvsGER
-Shooting Range UKvsGER
+Shooting Range AEFvsGER
+Shooting Range BEFvsGER
 Shooting Range HHFvsGER
+Shooting Range CEFvsGER
