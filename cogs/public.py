@@ -177,7 +177,7 @@ class public(commands.Cog):
         inst_id = self.bot.cache._get_selected_instance(ctx.author, ctx.channel.id)
         embed = base_embed(inst_id, title=player.name, description=f"[View player on Steam](https://steamcommunity.com/profiles/{str(player.steam_id)})")
         embed.add_field(name="Steam ID", value=f"`{player.steam_id}`")
-        embed.add_field(name="Score", value=str(player.score))
+        embed.add_field(name="Role", value=str(player.role))
         embed.add_field(name="Online For", value=f"{str(player.online_time())} minutes")
         embed.add_field(name="Player ID", value=str(player.player_id))
         embed.add_field(name="Team ID", value=str(player.team_id))

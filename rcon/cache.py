@@ -29,9 +29,11 @@ DETACHMENT_PLAYER_LIMITS = {
 SHORT_TEAM_NAMES = {
     "German Empire": "GER",
     "Imperial German Army": "GER",
-    "Jaeger Regiments": "GER",
+    "Jäger-Battalion": "JAG",
+    "Jäger-Battalion, Army Detachment Gaede": "JAG",
     "French Republic": "FR",
     "French Army": "FR",
+    "Chasseurs Alpins": "CHA",
     "American Expeditionary Force": "AEF",
     "British Expeditionary Force": "BEF",
     "369th Infantry Division": "HHF",
@@ -293,7 +295,7 @@ class ServerInstance(MapRotation):
 
         ----- Active Players -----
         ID: 0 | SteamID: 76561199023367826 | Name: (WTH) Heidegger | Team ID: 1 | Squad ID: N/A
-        ID: 4 | SteamID: 76561199023367826 | Name: (WTH) Abusify | Team ID: 2 | Squad ID: 1
+        ID: 4 | SteamID: 76561199023367826 | Name: (WTH) Abusify | Team ID: 2 | Squad ID: 1 | Is Leader: True | Role: USA_Marksman_01
 
         ----- Recently Disconnected Players [Max of 15] -----
         ID: 10 | SteamID: 76561198062628191 | Since Disconnect: 02m.30s | Name: [2.FJg]Gh0st
@@ -312,13 +314,13 @@ class ServerInstance(MapRotation):
 
             else: # Parse line
                 try:
-                    re_res = re.search(r'ID: (\d+) \| SteamID: (\d{17}) \| Name: (.*) \| Team ID: ([\w/]*) \| Squad ID: ([\w/]*)', line).groups()
+                    re_res = re.search(r'ID: (\d+) \| SteamID: (\d{17}) \| Name: (.*) \| Team ID: (\d+|N/A) \| Squad ID: (\d+|N/A)( \| Is Leader: (True|False) | Role: (.*))?', line).groups()
                 except: # Unable to fetch all data, skip this line
                     logging.error('Inst %s: Could not parse player line: %s', self.id, line)
                     pass
                 else:
                     data = {}
-                    data['id'] = int(re_res[0])
+                    data['player_id'] = int(re_res[0])
                     data['steam_id'] = int(re_res[1])
                     data['name'] = str(re_res[2])
                     try: data['team_id'] = int(re_res[3].strip())
@@ -326,7 +328,10 @@ class ServerInstance(MapRotation):
                     try: data['squad_id'] = int(re_res[4].strip())
                     except: data['squad_id'] = -1
 
-                    player = OnlinePlayer(data['steam_id'], data['name'], data['team_id'], data['squad_id'], data['id'])
+                    if re_res[5]: # Is Squad v2.12
+                        data['role'] = re_res[7]
+
+                    player = OnlinePlayer(**data)
                     players.append(player)
         ids = [player.steam_id for player in players]
 
@@ -346,7 +351,6 @@ class ServerInstance(MapRotation):
             old_player = self.select(steam_id=player.steam_id)
             if old_player:
                 players[i].online_since = old_player[0].online_since
-                players[i].score = old_player[0].score
         self.players = players
         self.ids = ids
 
@@ -452,21 +456,25 @@ class ServerInstance(MapRotation):
                 
             elif line.startswith("ID") and team_id:
                 try:
-                    try: re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False) \| Creator Name: (.*) \| Creator Steam ID: (\d{17})', line).groups()
-                    except: re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False)', line).groups()
+                    re_res = re.search(r'ID: (\d*) \| Name: (.*) \| Size: (\d*) \| Locked: (True|False)( \| Creator Name: (.*) \| Creator Steam ID: (\d{17}))?', line).groups()
                 except:
                     logging.error('Inst %s: Failed to parse squad line: %s', self.id, line)
                 else:
-                    squad_id = int(re_res[0])
-                    name = str(re_res[1])
-                    size = int(re_res[2])
-                    player_ids = [player.steam_id for player in self.select(team_id=team_id, squad_id=squad_id)]
-                    locked = True if re_res[3] == "True" else False                    
-                    creator_name = str(re_res[4]) if len(re_res) > 4 else None
-                    creator_steam_id = int(re_res[5]) if len(re_res) > 4 else None
+                    data = dict(
+                        squad_id = int(re_res[0]),
+                        name = str(re_res[1]),
+                        #size = int(re_res[2]),
+                        player_ids = [player.steam_id for player in self.select(team_id=team_id, squad_id=int(re_res[0]))],
+                        locked = True if re_res[3] == "True" else False,
+                        creator_name = None,
+                        creator_steam_id = None,
+                    )
+                    if re_res[4]:
+                        data['creator_name'] = str(re_res[5])
+                        data['creator_steam_id'] = int(re_res[6])
 
-                    if team_id == 1: self.team1.set_squad(squad_id, name, player_ids, locked, creator_name, creator_steam_id)
-                    elif team_id == 2: self.team2.set_squad(squad_id, name, player_ids, locked, creator_name, creator_steam_id)
+                    if team_id == 1: self.team1.set_squad(**data)
+                    elif team_id == 2: self.team2.set_squad(**data)
             
         self.team1.unassigned = [player.steam_id for player in self.select(team_id=1, squad_id=-1)]
         self.team2.unassigned = [player.steam_id for player in self.select(team_id=2, squad_id=-1)]
@@ -484,7 +492,7 @@ class ServerInstance(MapRotation):
         logs.ServerLogs(self.id).add('joins', f'{player.name} was disconnected after {str(player.online_time())} minutes')
 
 class OnlinePlayer():
-    def __init__(self, steam_id: int, name: str, team_id: int, squad_id: int, player_id: int, online_since: datetime = None, score: int = 0):
+    def __init__(self, steam_id: int, name: str, team_id: int, squad_id: int, player_id: int, online_since: datetime = None, score: int = 0, role: str = "Unknown"):
         self.steam_id = steam_id
         self.name = name
         self.team_id = team_id
@@ -492,11 +500,13 @@ class OnlinePlayer():
         self.player_id = player_id
         self.online_since = online_since if online_since else datetime.now()
         self.score = score
+        self.role = role
 
-    def update(self, team_id: int = None, squad_id: int = None, score: int = None):
-        if team_id: self.team_id = team_id
-        if squad_id: self.squad_id = squad_id
-        if score: self.score = score
+    def update(self, team_id: int = None, squad_id: int = None, score: int = None, role: str = None):
+        if team_id is not None: self.team_id = team_id
+        if squad_id is not None: self.squad_id = squad_id
+        if score is not None: self.score = score
+        if role is not None: self.role = role
         return self
 
     def __str__(self):
@@ -514,7 +524,7 @@ class Team():
         self.faction = DIVISION_FACTIONS.get(faction, faction)
         self.faction_short = SHORT_TEAM_NAMES.get(self.faction, self.faction)
         self.division = faction if faction != self.faction else None
-        self.division_type = DIVISION_TYPES.get(self.division)
+        self.division_type = DIVISION_TYPES.get(self.division, None)
         self.squads = []
         self.unassigned = []
 
@@ -529,21 +539,21 @@ class Team():
         else:
             return self.faction
 
-    def set_squad(self, id: int, name: str, player_ids: list, locked: bool, creator_name: str, creator_steam_id: int):
+    def set_squad(self, squad_id: int, name: str, player_ids: list, locked: bool, creator_name: str, creator_steam_id: int):
         squad = None
         for i, squad in enumerate(self.squads):
-            if squad.id == id:
+            if squad.id == squad_id:
                 break
             squad = None
         
         if squad: # There is a squad with this ID
             squad = squad[0]
             if squad.name != name or squad.creator_steam_id != creator_steam_id: # The previous squad was replaced
-                self.squads[i] = Squad(id, name, player_ids, locked, creator_name, creator_steam_id)
+                self.squads[i] = Squad(squad_id, name, player_ids, locked, creator_name, creator_steam_id)
             else: # This squad already existed before
                 self.squads[i].update(player_ids, locked)
         else: # This is a new squad
-            squad = Squad(id, name, player_ids, locked, creator_name, creator_steam_id)
+            squad = Squad(squad_id, name, player_ids, locked, creator_name, creator_steam_id)
             self.squads.append(squad)
 
 class Squad():
