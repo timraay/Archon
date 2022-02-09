@@ -259,7 +259,7 @@ class moderation(commands.Cog):
         if map_name:
             # check current game for instance select - squad uses another command
             if instance_details.game == 'squad':
-                res = inst.rcon.change_layer(map_name)
+                res = inst.rcon.switch_to_layer(map_name)
             else:
                 res = inst.rcon.switch_to_map(map_name)
         else:

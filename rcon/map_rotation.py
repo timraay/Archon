@@ -4,6 +4,8 @@ from numpy.random import choice
 import pytz
 from copy import deepcopy
 
+from rcon.instances import Instance
+
 import logging
 
 with open('maps_btw.txt', 'r') as f:
@@ -73,7 +75,11 @@ class MapRotation:
         if str(new_map) == str(self.next_map) or (self.next_map and not self.next_map.validate(len(self.players))) or self.is_transitioning:
             self.next_map = self._get_next_map()
             if self.next_map:
-                self.rcon.set_next_map(self.next_map)
+                instance_details = Instance(self.id)
+                if instance_details.game == 'squad':
+                    self.rcon.set_next_layer(self.next_map)
+                else:
+                    self.rcon.set_next_map(self.next_map)
 
         return self.next_map
         

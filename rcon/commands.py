@@ -127,7 +127,7 @@ class Rcon(RconConnection):
         res = self._res_to_str(res)
         return res
 
-    def change_layer(self, layer_name: str):
+    def switch_to_layer(self, layer_name: str):
         res = self.exec_command(f"AdminChangeLayer {layer_name}")
         res = self._res_to_str(res)
         return res
