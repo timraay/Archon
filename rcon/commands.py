@@ -135,7 +135,7 @@ class Rcon(RconConnection):
 
     # ADMINISTRATION
     def set_max_player_limit(self, limit: str):
-        res = self.exec_command(f"AdminSetMaxNumPlayers")
+        res = self.exec_command(f"AdminSetMaxNumPlayers {limit}")
         res = self._res_to_str(res)
         return res
     def change_password(self, password: str = ""):

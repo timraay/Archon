@@ -31,7 +31,7 @@ class Config:
 
     def update(self):
         self.config = {}
-        with open(self.path, "r") as f:
+        with open(self.path, "r", encoding="utf-8") as f:
             for line in f.readlines():
                 line = line.strip("\n").split("=", 1)
                 if len(line) == 2:

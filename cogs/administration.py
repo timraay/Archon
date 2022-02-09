@@ -39,7 +39,7 @@ class administration(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(description="Set the max player limit", usage="r!set_max_player_limit", aliases=["set_player_limit", "set_max_player_limit"])
+    @commands.command(description="Set the max player limit", usage="r!set_max_player_limit", aliases=["set_player_limit", "set_max_player_limit", "set_max_players"])
     @check_perms(config=True)
     async def player_limit(self, ctx, limit: int):
         inst = self.bot.cache.instance(ctx.author, ctx.guild.id)
