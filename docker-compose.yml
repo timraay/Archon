@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  bot:
+    build: .
+    container_name: "archon"
+    restart: "no"
+    volumes: 
+      - logs:/logs/
+      - rotations:/rotations/
+      - db_data:/db_data/

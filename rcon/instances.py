@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 import discord
 from discord import guild
 from discord.ext import commands
@@ -78,7 +79,7 @@ If you sum the ints of the permissions you want to assign you get the permission
 
 
 
-db = sqlite3.connect('instances.db')
+db = sqlite3.connect(Path('db_data/instances.db'))
 cur = db.cursor()
 cur.execute('CREATE TABLE IF NOT EXISTS instances(instance_id INT NOT NULL, name TEXT, address TEXT, port INT, password TEXT, owner_id INT, game TEXT, default_perms INT, uses_custom_rotation INT, PRIMARY KEY (instance_id))')
 cur.execute('CREATE TABLE IF NOT EXISTS config(instance_id INT, guild_id INT, chat_trigger_words TEXT, chat_trigger_channel_id INT, chat_trigger_mentions TEXT, chat_trigger_confirmation TEXT, chat_trigger_cooldown INT, chat_trigger_require_reason INT, channel_log_chat INT, channel_log_joins INT, channel_log_match INT, channel_log_rcon INT, channel_log_teamkills INT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')

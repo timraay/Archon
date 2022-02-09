@@ -1,5 +1,6 @@
 import sqlite3
 from discord.ext import commands
+from pathlib import Path
 
 """
 Permissions are stored as an integer. These can be converted to bits.
@@ -64,7 +65,7 @@ class Permissions:
     def has_perms(self, **perms):
         return all([self.__getattribute__(perm) == val for perm, val in perms.items() if perm in self.__perms__])
 
-db = sqlite3.connect('instances.db')
+db = sqlite3.connect(Path('db_data/instances.db'))
 cur = db.cursor()
 
 def get_instances_for_user(user, guild_id: int = None):

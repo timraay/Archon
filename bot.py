@@ -1,3 +1,5 @@
+#!/usr/bin/python3 -u
+
 # RCON for games running on the OWI core, accessed through Discord, by timraay
 
 import discord
@@ -133,6 +135,9 @@ async def info(ctx, cog: str = None):
                     embed.add_field(name=cog.qualified_name, value=f"{str(len(commands_list))} commands & {str(len(events_list))} events", inline=False)
         await ctx.send(embed=embed)
 
+print('Cogs:', os.listdir(Path("./cogs")))
+print('Cur. Dir:', os.listdir())
+
 # Load all cogs
 for cog in os.listdir(Path("./cogs")):
     if cog.endswith(".py"):
@@ -146,7 +151,7 @@ for cog in os.listdir(Path("./cogs")):
 # Setup logger
 import logging
 from datetime import datetime
-logname = datetime.utcnow().strftime('logs/Archon-%Y.%m.%d-%H.%M.%S.log')
+logname = Path('logs/'+datetime.utcnow().strftime('Archon-%Y.%m.%d-%H.%M.%S.log'))
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', datefmt='%m/%d %H:%M:%S', filename=logname, filemode='w+', level=logging.INFO)
 logging.info('Launching bot...')
 

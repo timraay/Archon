@@ -4,6 +4,8 @@ import random
 from random import randint
 import os
 import ast
+import sqlite3
+from pathlib import Path
 
 from utils import Config
 config = Config()
@@ -221,8 +223,7 @@ class _util(commands.Cog):
         else:
             await msg.delete()
 
-            import sqlite3
-            db = sqlite3.connect('instances.db')
+            db = sqlite3.connect(Path('db_data/instances.db'))
             cur = db.cursor()
             cur.execute('SELECT DISTINCT owner_id FROM instances')
             owner_ids = [owner_id[0] for owner_id in cur.fetchall()]

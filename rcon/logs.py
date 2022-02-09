@@ -2,8 +2,9 @@ import sqlite3
 from datetime import datetime
 from io import StringIO
 from itertools import count
+from pathlib import Path
 
-db = sqlite3.connect("instances.db")
+db = sqlite3.connect(Path('db_data/instances.db'))
 cur = db.cursor()
 cur.execute('CREATE TABLE IF NOT EXISTS logs(instance_id INT, log_id INT, category TEXT, message TEXT, timestamp TEXT, FOREIGN KEY (instance_id) REFERENCES instances(instance_id))')
 db.commit()
