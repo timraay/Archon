@@ -584,12 +584,15 @@ class instances(commands.Cog):
                         raise commands.BadArgument('You haven\'t joined that guild yourself')
                     if not member.guild_permissions.administrator:
                         raise commands.BadArgument('You need to have administrator permissions in that guild')
-
+                if key == "chat_trigger_words":
+                    if value[-1] == ',':
+                        # Removing trailing , if inserted by mistake results in all chat to sent to alert channel
+                        value = value.rstrip(',')
                 instance.config[key] = value
                 instance.store_config()
 
                 if not old_value: old_value = "None"
-                embed = base_embed(instance.id, title='Updated config')
+                embed = base_embed(instance.id, title='Updated config: ' + key + ' :')
                 embed.add_field(name="Old Value", value=str(old_value))
                 embed.add_field(name="New value", value=str(value))
                 await ctx.send(embed=embed)
