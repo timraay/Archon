@@ -585,9 +585,7 @@ class instances(commands.Cog):
                     if not member.guild_permissions.administrator:
                         raise commands.BadArgument('You need to have administrator permissions in that guild')
                 if key == "chat_trigger_words":
-                    if value[-1] == ',':
-                        # Removing trailing , if inserted by mistake results in all chat to sent to alert channel
-                        value = value.rstrip(',')
+                    value = self.remove_extra_commas(value)
                 instance.config[key] = value
                 instance.store_config()
 
@@ -615,8 +613,6 @@ class instances(commands.Cog):
         CONFIG_TITLE = "Logging Channels"
         await self.config_menu(ctx, CONFIG_TITLE, CONFIG_KEY, option, value)
 
-
-
     async def config_menu(self, ctx, config_title, config_key, option: str = None, value = None):
         inst_id = self.bot.cache._get_selected_instance(ctx.author, ctx.channel.id)
         inst = Instance(inst_id)
@@ -639,6 +635,10 @@ class instances(commands.Cog):
                 expected = type(inst.config[key])
                 received = type(value)
                 raise commands.BadArgument("Value should be %s, not %s" % (SIMPLIFIED_CLASS_NAMES.get(expected, expected.__name__), SIMPLIFIED_CLASS_NAMES.get(received, received.__name__)))
+
+            if key == "chat_trigger_words":
+                if key == "chat_trigger_words":
+                    value = self.remove_extra_commas(value)
 
             inst.config[CONFIG_KEY + option] = value
             inst.store_config()
@@ -694,6 +694,12 @@ class instances(commands.Cog):
             embed.add_field(name="Old Value", value=str(old_value) if old_value else 'None')
             embed.add_field(name="New value", value=str(value) if value else 'None')
             await ctx.send(embed=embed)
+
+    @staticmethod
+    def remove_extra_commas(string):
+        value = string.strip(',')
+        return value
+
 
 def setup(bot):
     bot.add_cog(instances(bot))
