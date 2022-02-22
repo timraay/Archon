@@ -592,7 +592,7 @@ class instances(commands.Cog):
                 instance.store_config()
 
                 if not old_value: old_value = "None"
-                embed = base_embed(instance.id, title='Updated config:')
+                embed = base_embed(instance.id, title='Updated config')
                 embed.add_field(name="Old Value", value=str(old_value))
                 embed.add_field(name="New value", value=str(value))
                 await ctx.send(embed=embed)
