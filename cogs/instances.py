@@ -637,8 +637,7 @@ class instances(commands.Cog):
                 raise commands.BadArgument("Value should be %s, not %s" % (SIMPLIFIED_CLASS_NAMES.get(expected, expected.__name__), SIMPLIFIED_CLASS_NAMES.get(received, received.__name__)))
 
             if key == "chat_trigger_words":
-                if key == "chat_trigger_words":
-                    value = self.remove_extra_commas(value)
+                value = self.remove_extra_commas(value)
 
             inst.config[CONFIG_KEY + option] = value
             inst.store_config()
