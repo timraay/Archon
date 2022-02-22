@@ -697,6 +697,9 @@ class instances(commands.Cog):
 
     @staticmethod
     def remove_extra_commas(string):
+        """
+          Function to remove leading and trailing commas from string passed to function
+        """
         value = string.strip(',')
         return value
 
