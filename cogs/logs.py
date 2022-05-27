@@ -107,7 +107,7 @@ class logs(commands.Cog):
             raw_data = {}
             if message.startswith('[ChatAdmin] ASQKillDeathRuleset'):
                 # The message is a logged teamkill
-                p1_name, p2_name = re.search(r'\[ChatAdmin\] ASQKillDeathRuleset : Player (.*)%s Team Killed Player (.*)', message).groups()
+                p1_name, p2_name = re.search(r'\[ChatAdmin\] ASQKillDeathRuleset : Player (.*) Team Killed Player (.*)', message).groups()
                 p1 = inst.get_player(p1_name)
                 p2 = inst.get_player(p2_name)
                 p1_output = f"{p1_name} ({p1.steam_id})" if p1 else p1_name
