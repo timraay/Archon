@@ -314,11 +314,13 @@ class ServerInstance(MapRotation):
 
             else: # Parse line
                 try:
-                    re_res = re.search(r'ID: (\d+) \| SteamID: (\d{17}) \| Name: (.*) \| Team ID: (\d+|N/A) \| Squad ID: (\d+|N/A)( \| Is Leader: (True|False) | Role: (.*))?', line).groups()
+                    re_res = re.search(r'ID: (\d+) \| SteamID: (\d{17}|N/A) \| Name: (.*) \| Team ID: (\d+|N/A) \| Squad ID: (\d+|N/A)( \| Is Leader: (True|False) | Role: (.*))?', line).groups()
                 except: # Unable to fetch all data, skip this line
                     logging.error('Inst %s: Could not parse player line: %s', self.id, line)
                     pass
                 else:
+                    if re_res[1] == "N/A":
+                        continue
                     data = {}
                     data['player_id'] = int(re_res[0])
                     data['steam_id'] = int(re_res[1])
