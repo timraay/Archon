@@ -14,8 +14,7 @@ from rcon.instances import get_available_instances
 from utils import Config
 config = Config()
 
-intents = discord.Intents.default()
-intents.members = True
+intents = discord.Intents.all()
 
 async def command_prefix(bot, msg):
     res = re.search(r"\A[rR](\d*)!", msg.content)
@@ -152,11 +151,13 @@ logging.info('Launching bot...')
 
 # Initialize cache
 from rcon.cache import Cache
-try:
-    bot.cache = Cache()
-except:
-    logging.fatal('Failed to build the cache')
-    raise
+for i in range(10):
+    try:
+        bot.cache = Cache()
+    except:
+        logging.error('Failed to build the cache on attempt #%s', i+1)
+    else:
+        break
 
 # Run the bot
 with open("token.txt", "r") as f:

@@ -140,7 +140,7 @@ class instances(commands.Cog):
     @instance_command.command(name="help")
     async def instance_help(self, ctx):
         embed = discord.Embed(title="Server Instances Help")
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
         embed.add_field(name="Public Commands", value="```r!instance <name_or_id>\nr!instance list\nr!instance perms```", inline=False)
         embed.add_field(name="Admin Commands", value="```r!perms\nr!perms help\nr!perms (set|grant|remove|reset) (default|<role>|<user>) <perms...>\nr!alerts [option] [value]\nr!logging [option] [value]\nr!instance config\nr!instance config <key>\nr!instance config <key> <value>\n\nr!instance add\nr!instance reconnect\nr!instance disconnect\nr!instance credentials\nr!instance delete```", inline=False)
         await ctx.send(embed=embed)
@@ -156,7 +156,7 @@ class instances(commands.Cog):
             current_instance = "None"
 
         embed = discord.Embed(title=f"Available Instances ({str(len(instances))})", description=f'> Currently selected: {current_instance}')
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
 
         for i, (inst, perms) in enumerate(instances):
             try: self.bot.cache.instance(inst.id, by_inst_id=True)
@@ -182,7 +182,7 @@ class instances(commands.Cog):
 
         perms = ", ".join([perm for perm, val in perms.to_dict().items() if val])
         embed = discord.Embed(title=f'Selected the "{instance.name}" instance', description=f"> **Perms:** {perms}")
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
 
         msg = await ctx.send(embed=embed)
         await asyncio.sleep(4)
