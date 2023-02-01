@@ -57,7 +57,7 @@ class public(commands.Cog):
         elif playercount >= 20: color = discord.Color.gold()
         elif playercount >= 10: color = discord.Color.green()
         elif playercount >= 3: color = discord.Color.dark_green()
-        else: color = discord.Embed.Empty
+        else: color = None
         
         embed = base_embed(inst.id, color=color)
         embed.add_field(name="Players", value=f"{str(playercount)}/100")

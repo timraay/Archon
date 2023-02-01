@@ -209,7 +209,7 @@ class logs(commands.Cog):
                     embed.set_footer(text=f"Recorded at {datetime.now().strftime('%a, %b %d, %Y %I:%M %p')}")
 
                     if not player or channel == "Unknown":
-                        embed.color = discord.Embed.Empty
+                        embed.color = None
                     elif raw_data['channel'] == "ChatAll":
                         embed.color = discord.Color.dark_gray()
                     elif raw_data['channel'] == "ChatTeam":
@@ -271,7 +271,7 @@ class logs(commands.Cog):
                                         embed.description = "\n".join(joins)
                                         await channel_joins.send(embed=embed)
                                     if leaves:    
-                                        embed.color = discord.Embed.Empty
+                                        embed.color = None
                                         embed.description = "\n".join(leaves)
                                         await channel_joins.send(embed=embed)
                             if channel_match:
