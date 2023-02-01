@@ -301,5 +301,5 @@ class moderation(commands.Cog):
         ServerLogs(inst.id).add('rcon', f'{ctx.author.name}#{ctx.author.discriminator} queued {map_name}')
 
 
-def setup(bot):
-    bot.add_cog(moderation(bot))
+async def setup(bot):
+    await bot.add_cog(moderation(bot))

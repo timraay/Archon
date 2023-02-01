@@ -200,5 +200,5 @@ class administration(commands.Cog):
         f = discord.File(fp=path, filename=f"{Instance(inst.id).name} map rotation.json")
         await ctx.send(file=f)
 
-def setup(bot):
-    bot.add_cog(administration(bot))
+async def setup(bot):
+    await bot.add_cog(administration(bot))

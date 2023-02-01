@@ -703,5 +703,5 @@ class instances(commands.Cog):
         return value
 
 
-def setup(bot):
-    bot.add_cog(instances(bot))
+async def setup(bot):
+    await bot.add_cog(instances(bot))
