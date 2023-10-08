@@ -19,6 +19,9 @@ class ServerStatusWidgets(commands.Cog):
         self.cur = self.db.cursor()
         self.bot = bot
 
+    # TODO Add functionality to remove widgets
+    # TODO Add functionality to check for removed messages and remove that setup from the db
+
 
     @commands.group(invoke_without_command=True, name="widget", description="Create, select and manage widgets",
                     usage="r!server widget mangagment", aliases=["status_widget"])
@@ -38,6 +41,7 @@ class ServerStatusWidgets(commands.Cog):
         inst = self.bot.cache.instance(instance_id, by_inst_id=True).update()
         playercount = len(inst.players)
 
+        #TODO Get Instance Name!
         embed = discord.Embed(title="Test Server", color=0xde1b1b)
         embed.add_field(name="Current Players", value=f"{str(playercount)}/100", inline=False)
         embed.add_field(name="Current Map: ", value=inst.current_map)
