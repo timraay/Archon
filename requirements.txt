@@ -1,3 +1,3 @@
-discord.py>=2.1.0
-pytz
-numpy
+discord.py>=2.3.2
+pytz~=2023.3.post1
+numpy~=1.26.0
