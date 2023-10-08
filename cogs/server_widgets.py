@@ -81,7 +81,7 @@ class ServerStatusWidgets(commands.Cog):
 
     @widget.command()
     async def start(self, ctx):
-        #TODO Remove this and just and just have extension loaded
+        #TODO Remove this and just and just have extension loaded when bot is ready or only have the tasks start when the bot is ready
         self.update_widget.start()
         await ctx.send("Starting Wdiget")
 
