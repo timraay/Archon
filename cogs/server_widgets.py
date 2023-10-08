@@ -1,15 +1,6 @@
 import discord
-from discord.ext import commands
-import os
-from pathlib import Path
-from typing import Literal, Optional
-from discord.ext import commands
-from discord.ext.commands import Greedy, Context # or a subclass of yours
-from utils import Config
-import discord
 from discord.ext import commands, tasks
-import json
-from ast import literal_eval
+
 from datetime import datetime
 import sqlite3
 
