@@ -46,6 +46,7 @@ class ServerStatusWidgets(commands.Cog):
 
         channel_id = ctx.message.channel.id
         message_id = await ctx.send(embed=embed)
+        #TODO Add functionalty to prevent widgets for the same instance being added to the same channel
         self.cur.execute(f'INSERT INTO widget_config VALUES (?,?,?)', (instance_id, channel_id, message_id.id))
         self.db.commit()
         print(message_id)
